@@ -82,6 +82,11 @@ UIManager.prototype = {
 			end
 		end
 	end;
+	setVisibleWindow = function(self, windowTbl)
+		for key, val in pairs(self.windows) do
+			val.visible = (val == windowTbl)
+		end
+	end;
 	addWindow = function(self, windowTbl)
 		table.insert(self.windows, windowTbl)
 	end;
@@ -157,7 +162,7 @@ Window.prototype = {
 	y = 1;
 	h = 1;
 	w = 1;
-	visible = true;
+	visible = false;
 	closed = false;
 	--functions
 	draw = function(self) 
