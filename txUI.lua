@@ -244,7 +244,8 @@ Window.mt = {
 }
 function Window:new(windowTbl)
 	setmetatable(windowTbl, Window.mt)
-	return windowTbl;
+	windowTbl.components = {}
+	return windowTbl
 end
 
 -- --
@@ -593,6 +594,7 @@ function List:new(listTbl)
 		listTbl = self
 	end
 	setmetatable(listTbl, List.mt)
+	listTbl.components = {}
 	return listTbl
 end
 
