@@ -493,11 +493,8 @@ List.prototype = {
 	activeColor = colors.gray;
 	activeTextColor = colors.white;
 	textAlign = "left";
-	scrollBar = true;
 	scrollBarColor = colors.gray;
 	scrollBarTextColor = colors.white;
-	arrowScroll = true;
-	currentSelection = 0;
 	displayOffset = 0;
 	components = {};
 	--functions
