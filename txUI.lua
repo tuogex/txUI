@@ -495,6 +495,7 @@ List.prototype = {
 	textAlign = "left";
 	scrollBarColor = colors.gray;
 	scrollBarTextColor = colors.white;
+	scrollBar = true;
 	displayOffset = 0;
 	components = {};
 	--functions
@@ -512,32 +513,38 @@ List.prototype = {
 			self.components[key] = val
 		end
 		-- draw the scroll bar
-		DrawUtils:drawRect(self:termX() + self.w - 1, self:termY(), 1, self.h, self.scrollBarColor)
-		term.setBackgroundColor(self.scrollBarColor)
-		term.setTextColor(self.scrollBarTextColor)
-		term.setCursorPos(self:termX() + self.w - 1, self:termY())
-		term.write("^")
-		term.setCursorPos(self:termX() + self.w - 1, self:termY() + self.h - 1)
-		term.write("v")
+		if (self.scrollBar) then
+			DrawUtils:drawRect(self:termX() + self.w - 1, self:termY(), 1, self.h, self.scrollBarColor)
+			term.setBackgroundColor(self.scrollBarColor)
+			term.setTextColor(self.scrollBarTextColor)
+			term.setCursorPos(self:termX() + self.w - 1, self:termY())
+			term.write("^")
+			term.setCursorPos(self:termX() + self.w - 1, self:termY() + self.h - 1)
+			term.write("v")
+		end
 	end;
 	click = function (self, x, y) 
 		for key, val in pairs(self.components) do
-			val:click(x, y)
-		end
-		if ((x == self:termX() + self.w - 1) and (y == self:termY())) then
-			if (self.displayOffset < 0) then
-				self.displayOffset = self.displayOffset + 1
+			if ((val.y > 0) and (val.y <= self.h)) then
+				val:click(x, y)
 			end
 		end
-		if ((x == self:termX() + self.w - 1) and (y == self:termY() + self.h - 1)) then
-			if (self.displayOffset > -#self.components + 1) then
-				self.displayOffset = self.displayOffset - 1
+		if (self.scrollBar) then
+			if ((x == self:termX() + self.w - 1) and (y == self:termY())) then
+				if (self.displayOffset < 0) then
+					self.displayOffset = self.displayOffset + 1
+				end
+			end
+			if ((x == self:termX() + self.w - 1) and (y == self:termY() + self.h - 1)) then
+				if (self.displayOffset > -#self.components + 1) then
+					self.displayOffset = self.displayOffset - 1
+				end
 			end
 		end
 	end;
 	addComponent = function(self, componentTbl)
 		componentTbl.h = 1
-		componentTbl.w = self.w - 1
+		componentTbl.w = self.w - (self.scrollBar and 1 or 0)
 		componentTbl.bgColor = (#self.components % 2 == 0 and self.bgColor or self.bgColorStripe)
 		componentTbl.textColor = (#self.components % 2 == 0 and self.textColor or self.textColorStripe)
 		componentTbl.textAlign = self.textAlign
@@ -563,4 +570,65 @@ function List:new(listTbl)
 	end
 	setmetatable(listTbl, List.mt)
 	return listTbl
+end
+
+-- --
+-- Checkbox extends Component
+-- A component that lets users make a boolean choice
+-- --
+Checkbox = {}
+Checkbox.prototype = {
+	--vars
+	h = 1;
+	w = 16;
+	bgColor = colors.lightGray;
+	boxColor = colors.white;
+	textColor = colors.black;
+	checkedChar = "X";
+	checked = false;
+	text = "txUI Checkbox";
+	textPosition = "right";
+	--functions
+	draw = function(self)
+		DrawUtils:drawRect(self:termX(), self:termY(), self.w, self.h, self.bgColor)
+		-- draw box and set label position
+		term.setBackgroundColor(self.boxColor)
+		term.setTextColor(self.textColor)
+		if (self.textPosition == "right") then
+			DrawUtils:drawRect(self:termX(), self:termY(), 1, 1, self.boxColor)
+			term.setCursorPos(self:termX(), self:termY())
+			term.write(self.checked and self.checkedChar or " ")
+			term.setCursorPos(self:termX() + 2, self:termY())
+		elseif (self.textPosition == "left") then
+			DrawUtils:drawRect(self:termX() + self.w - 1, self:termY(), 1, 1, self.boxColor)
+			term.setCursorPos(self:termX() + self.w - 1, self:termY())
+			term.write(self.checked and self.checkedChar or " ")
+			term.setCursorPos(self:termX() + self.w - string.len(self.text) - 2, self:termY())
+		end
+		-- draw label
+		term.setBackgroundColor(self.bgColor)
+		term.write(self.text)
+	end;
+	click = function (self, x, y) 
+		if ((x >= self:termX()) and (x <= (self:termX() + self.w - 1)) and (y >= self:termY()) and (y <= (self:termY() + self.h - 1))) then
+			self.checked = not self.checked
+		end
+	end;
+	update = function(self) return false end;
+}
+Checkbox.mt = {
+	__index = function (table, key)
+		if (Checkbox.prototype[key] ~= nil) then
+			return Checkbox.prototype[key]
+		else
+			return Component.prototype[key]
+		end
+	end;
+}
+function Checkbox:new(checkboxTbl)
+	if (checkboxTbl == nil) then
+		checkboxTbl = self
+	end
+	setmetatable(checkboxTbl, Checkbox.mt)
+	return checkboxTbl
 end

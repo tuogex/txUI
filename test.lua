@@ -19,6 +19,7 @@ list:addComponent(txUI.Button:new({text = "4";}))
 list:addComponent(txUI.Button:new({text = "5";}))
 list:addComponent(txUI.Button:new({text = "exit"; action = (function(self) self.parent.parent:close() end);}))
 
+window:addComponent(txUI.Checkbox:new({x = 4; y = 5;}))
 window:addComponent(txUI.Button:new({x = 4; y = 15;}))
 window:addComponent(txUI.Button:new({x = 1; y = 1; w = 1; h = 1; action = (function(self) self.parent:close() end); textColor = colors.red; bgColor = window.tlColor; text = "X";}))
 txUI.UIManager.appUpdate = function(self) 
