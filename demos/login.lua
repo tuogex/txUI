@@ -1,4 +1,4 @@
-os.loadAPI("txUI")
+os.loadAPI("txUI.lua")
 local w, h = term.getSize()
 local window = txUI.Window:new({w = w; h = h;})
 local winIndex = txUI.UIManager:addWindow(window)
