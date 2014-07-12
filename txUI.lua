@@ -290,7 +290,7 @@ Button.prototype = {
 	--vars
 	h = 3;
 	w = 16;
-	color = colors.lightBlue;
+	bgColor = colors.lightBlue;
 	textColor = colors.white;
 	activeColor = colors.blue;
 	activeTextColor = colors.white;
@@ -300,7 +300,7 @@ Button.prototype = {
 	--functions
 	action = function(self) end;
 	draw = function(self)
-		DrawUtils:drawRect(self.x + self.parent.x - 1, self.y + self.parent.y - 1, self.w, self.h, (function(self) if (self.active) then return self.activeColor else return self.color end end)(self))
+		DrawUtils:drawRect(self.x + self.parent.x - 1, self.y + self.parent.y - 1, self.w, self.h, (function(self) if (self.active) then return self.activeColor else return self.bgColor end end)(self))
 		term.setCursorPos(DrawUtils:alignText(self.textAlign, string.len(self.text), self.x + self.parent.x - 1, self.w), self.y + (self.h / 2))
 		term.setTextColor((function(self) if (self.active) then return self.activeTextColor else return self.textColor end end)(self))
 		term.write(self.text)
