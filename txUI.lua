@@ -200,37 +200,27 @@ Window.prototype = {
 	end;
 	click = function(self, x, y)
 		for key, val in pairs(self.components) do
-			if (val:click(x, y)) then
-				break
-			end
+			val:click(x, y)
 		end
 	end;
 	key = function(self, keyCode)
 		for key, val in pairs(self.components) do
-			if (val:key(keyCode)) then
-				break
-			end
+			val:key(keyCode)
 		end
 	end;
 	char = function(self, char)
 		for key, val in pairs(self.components) do
-			if (val:char(char)) then
-				break
-			end
+			val:char(char)
 		end
 	end;
 	scroll = function(self, direction)
 		for key, val in pairs(self.components) do
-			if (val:scroll(direction)) then
-				break
-			end
+			val:scroll(direction)
 		end
 	end;
 	drag = function(self, x, y)
 		for key, val in pairs(self.components) do
-			if (val:drag(x, y)) then
-				break
-			end
+			val:drag(x, y)
 		end
 	end;
 	update = function(self)
@@ -279,6 +269,8 @@ Component.prototype = {
 	scroll = function(self, direction) return false end;
 	drag = function(self, x, y, button) return false end;
 	update = function(self) return false end;
+	termX = function(self) return self.x + self.parent.x - 1 end;
+	termY = function(self) return self.y + self.parent.y - 1 end;
 }
 
 -- --
@@ -300,19 +292,17 @@ Button.prototype = {
 	--functions
 	action = function(self) end;
 	draw = function(self)
-		DrawUtils:drawRect(self.x + self.parent.x - 1, self.y + self.parent.y - 1, self.w, self.h, (function(self) if (self.active) then return self.activeColor else return self.bgColor end end)(self))
-		term.setCursorPos(DrawUtils:alignText(self.textAlign, string.len(self.text), self.x + self.parent.x - 1, self.w), self.y + (self.h / 2))
+		DrawUtils:drawRect(self:termX(), self:termY(), self.w, self.h, (function(self) if (self.active) then return self.activeColor else return self.bgColor end end)(self))
+		term.setCursorPos(DrawUtils:alignText(self.textAlign, string.len(self.text), self:termX(), self.w), self:termY() + (self.h / 2))
 		term.setTextColor((function(self) if (self.active) then return self.activeTextColor else return self.textColor end end)(self))
 		term.write(self.text)
 	end;
 	click = function (self, x, y) 
-		if ((x >= self.x) and (x <= (self.x + self.w - 1)) and (y >= self.y) and (y <= (self.y + self.h - 1))) then
+		if ((x >= self:termX()) and (x <= (self:termX() + self.w - 1)) and (y >= self:termY()) and (y <= (self:termY() + self.h - 1))) then
 			self.active = true
 			self:action()
-			return true
 		else
 			self.active = false
-			return false
 		end
 	end;
 	update = function(self) return false end;
@@ -349,8 +339,8 @@ Label.prototype = {
 	textAlign = "center";
 	--functions
 	draw = function(self)
-		DrawUtils:drawRect(self.x + self.parent.x - 1, self.y + self.parent.y - 1, self.w, self.h, self.bgColor)
-		term.setCursorPos(DrawUtils:alignText(self.textAlign, string.len(self.text), self.x + self.parent.x - 1, self.w), self.y + (self.h / 2))
+		DrawUtils:drawRect(self:termX(), self:termY(), self.w, self.h, self.bgColor)
+		term.setCursorPos(DrawUtils:alignText(self.textAlign, string.len(self.text), self:termX(), self.w), self:termY() + (self.h / 2))
 		term.setBackgroundColor(self.bgColor)
 		term.setTextColor(self.textColor)
 		term.write(self.text)
@@ -394,32 +384,30 @@ TextField.prototype = {
 	displayOffset = 0;
 	--functions
 	draw = function(self)
-		DrawUtils:drawRect(self.x + self.parent.x - 1, self.y + self.parent.y - 1, self.w, self.h, self.bgColor)
+		DrawUtils:drawRect(self:termX(), self:termY(), self.w, self.h, self.bgColor)
 		term.setBackgroundColor(self.bgColor)
 		if (self.active or string.len(self.text) ~= 0) then
 			local toWrite = string.sub(self.text, self.displayOffset + 1, self.displayOffset + self.w)
-			term.setCursorPos(DrawUtils:alignText(self.textAlign, string.len(toWrite), self.x + self.parent.x - 1, self.w), self.y + (self.h / 2))
+			term.setCursorPos(DrawUtils:alignText(self.textAlign, string.len(toWrite), self:termX(), self.w), self:termY() + (self.h / 2))
 			term.setTextColor(self.textColor)
 			term.write(toWrite)
 		else
 			local toWrite = string.sub(self.placeholder, self.displayOffset + 1)
-			term.setCursorPos(DrawUtils:alignText(self.textAlign, string.len(toWrite), self.x + self.parent.x - 1, self.w), self.y + (self.h / 2))
+			term.setCursorPos(DrawUtils:alignText(self.textAlign, string.len(toWrite), self:termX(), self.w), self:termY() + (self.h / 2))
 			term.setTextColor(self.placeholderColor)
 			term.write(toWrite)
 		end
 		term.setCursorBlink(self.active)
 		if (self.active) then
-			term.setCursorPos(self.x + self.parent.x - 1 + self.cursorPos - self.displayOffset, self.y + (self.h / 2))
+			term.setCursorPos(self:termX() + self.cursorPos - self.displayOffset, self:termY() + (self.h / 2))
 		end
 	end;
 	click = function (self, x, y) 
-		if ((x >= self.x) and (x <= (self.x + self.w - 1)) and (y >= self.y) and (y <= (self.y + self.h - 1))) then
+		if ((x >= self:termX()) and (x <= (self:termX() + self.w - 1)) and (y >= self:termY()) and (y <= (self:termY() + self.h - 1))) then
 			self.active = true
 			self:action()
-			return true
 		else
 			self.active = false
-			return false
 		end
 	end;
 	action = function(self)
@@ -455,7 +443,6 @@ TextField.prototype = {
 				self:draw()
 			end
 		end
-		return true
 	end;
 	char = function(self, char)
 		if (self.active == false) then
@@ -466,7 +453,6 @@ TextField.prototype = {
 			self.displayOffset = self.displayOffset + 1
 		end
 		self.cursorPos = self.cursorPos + 1
-		return true
 	end;
 	update = function(self)
 		if (self.active) then
@@ -489,4 +475,95 @@ function TextField:new(textFieldTbl)
 	end
 	setmetatable(textFieldTbl, TextField.mt)
 	return textFieldTbl
+end
+
+-- --
+-- List extends Component
+-- A component that lets you hold lists of other components
+-- --
+List = {}
+List.prototype = {
+	--vars
+	h = 5;
+	w = 16;
+	bgColor = colors.white;
+	bgColorStripe = colors.lightGray;
+	textColor = colors.black;
+	textColorStripe = colors.black;
+	activeColor = colors.gray;
+	activeTextColor = colors.white;
+	textAlign = "left";
+	scrollBar = true;
+	scrollBarColor = colors.gray;
+	scrollBarTextColor = colors.white;
+	arrowScroll = true;
+	currentSelection = 0;
+	displayOffset = 0;
+	components = {};
+	--functions
+	draw = function(self)
+		DrawUtils:drawRect(self:termX(), self:termY(), self.w, self.h, self.bgColor)
+		term.setBackgroundColor(self.bgColor)
+		-- draw the components
+		local index = 1
+		for key, val in pairs(self.components) do
+			val.y = self.displayOffset + index
+			index = index + 1
+			if ((val.y > 0) and (val.y <= self.h)) then
+				val:draw()
+			end
+			self.components[key] = val
+		end
+		-- draw the scroll bar
+		DrawUtils:drawRect(self:termX() + self.w - 1, self:termY(), 1, self.h, self.scrollBarColor)
+		term.setBackgroundColor(self.scrollBarColor)
+		term.setTextColor(self.scrollBarTextColor)
+		term.setCursorPos(self:termX() + self.w - 1, self:termY())
+		term.write("^")
+		term.setCursorPos(self:termX() + self.w - 1, self:termY() + self.h - 1)
+		term.write("v")
+	end;
+	click = function (self, x, y) 
+		for key, val in pairs(self.components) do
+			val:click(x, y)
+		end
+		if ((x == self:termX() + self.w - 1) and (y == self:termY())) then
+			if (self.displayOffset < 0) then
+				self.displayOffset = self.displayOffset + 1
+			end
+		end
+		if ((x == self:termX() + self.w - 1) and (y == self:termY() + self.h - 1)) then
+			if (self.displayOffset > -#self.components + 1) then
+				self.displayOffset = self.displayOffset - 1
+			end
+		end
+	end;
+	addComponent = function(self, componentTbl)
+		componentTbl.h = 1
+		componentTbl.w = self.w - 1
+		componentTbl.bgColor = (#self.components % 2 == 0 and self.bgColor or self.bgColorStripe)
+		componentTbl.textColor = (#self.components % 2 == 0 and self.textColor or self.textColorStripe)
+		componentTbl.textAlign = self.textAlign
+		componentTbl.activeColor = self.activeColor
+		componentTbl.activeTextColor = self.activeTextColor
+		componentTbl.parent = self
+		table.insert(self.components, componentTbl)
+	end;
+	update = function(self) return false end;
+}
+List.mt = {
+	__index = function (table, key)
+		if (List.prototype[key] ~= nil) then
+			return List.prototype[key]
+		else
+			return Component.prototype[key]
+		end
+	end;
+}
+function List:new(listTbl)
+	if (listTbl == nil) then
+		listTbl = self
+	end
+	setmetatable(listTbl, List.mt)
+	return listTbl
 end
