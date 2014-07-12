@@ -379,6 +379,7 @@ TextField.prototype = {
 	placeholder = "txUI TextField";
 	text = "";
 	textAlign = "left";
+	textMask = "";
 	active = false;
 	cursorPos = 0;
 	displayOffset = 0;
@@ -388,6 +389,9 @@ TextField.prototype = {
 		term.setBackgroundColor(self.bgColor)
 		if (self.active or string.len(self.text) ~= 0) then
 			local toWrite = string.sub(self.text, self.displayOffset + 1, self.displayOffset + self.w)
+			if (string.len(self.textMask) ~= 0) then
+				toWrite = string.gsub(toWrite, "%C", self.textMask)
+			end
 			term.setCursorPos(DrawUtils:alignText(self.textAlign, string.len(toWrite), self:termX(), self.w), self:termY() + (self.h / 2))
 			term.setTextColor(self.textColor)
 			term.write(toWrite)
