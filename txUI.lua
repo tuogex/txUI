@@ -502,6 +502,7 @@ List.prototype = {
 	scrollBar = true;
 	displayOffset = 0;
 	components = {};
+	active = false;
 	--functions
 	draw = function(self)
 		DrawUtils:drawRect(self:termX(), self:termY(), self.w, self.h, self.bgColor)
@@ -533,6 +534,11 @@ List.prototype = {
 				val:click(x, y)
 			end
 		end
+		if ((x >= self:termX()) and (x <= (self:termX() + self.w - 1)) and (y >= self:termY()) and (y <= (self:termY() + self.h - 1))) then
+			self.active = true
+		else
+			self.active = false
+		end
 		if (self.scrollBar) then
 			if ((x == self:termX() + self.w - 1) and (y == self:termY())) then
 				if (self.displayOffset < 0) then
@@ -545,6 +551,20 @@ List.prototype = {
 				end
 			end
 		end
+	end;
+	scroll = function (self, direction)
+		if (self.active) then
+			if (direction == -1) then
+				if (self.displayOffset < 0) then
+					self.displayOffset = self.displayOffset + 1
+				end
+			end
+			if (direction == 1) then
+				if (self.displayOffset > -#self.components + 1) then
+					self.displayOffset = self.displayOffset - 1
+				end
+			end
+		end	
 	end;
 	addComponent = function(self, componentTbl)
 		componentTbl.h = 1
