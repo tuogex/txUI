@@ -1,0 +1,16 @@
+os.loadAPI("txUI")
+local w, h = term.getSize()
+local window = txUI.Window:new({w = w; h = h;})
+local winIndex = txUI.UIManager:addWindow(window)
+window:setTitleLabel(txUI.Label:new({text = "txUI Login Demo"; bgColor = window.tlColor; textColor = colors.white; w = window.w; x = window.x; textAlign = "right";}))
+window:addComponent(txUI.Button:new({x = 1; y = 1; w = 1; h = 1; action = (function(self) self.parent:close() end); textColor = colors.red; bgColor = window.tlColor; text = "X";}))
+
+window:addComponent(txUI.Label:new({x = 1; y = 5; w = w; text = "Login to txUI"; bgColor = colors.lightGray;}))
+window:addComponent(txUI.Label:new({x = 4; y = 8; text = "Username"; textAlign = "left"; bgColor = colors.lightGray;}))
+window:addComponent(txUI.TextField:new({x = 33; y = 8; placeholder = "Username";}))
+window:addComponent(txUI.Label:new({x = 4; y = 10; text = "Password"; textAlign = "left"; bgColor = colors.lightGray;}))
+window:addComponent(txUI.TextField:new({x = 33; y = 10; placeholder = "Password"; textMask = "*";}))
+window:addComponent(txUI.Checkbox:new({x = 4; y = 12; text = "Remember me";}))
+window:addComponent(txUI.Button:new({x = 33; y = 14; text = "Login";}))
+
+txUI.UIManager:startUpdateCycle()
