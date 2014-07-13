@@ -145,6 +145,43 @@ DrawUtils.prototype = {
 			return x + (w - textLength)
 		end
 	end;
+	limitText = function(self, text, limit, tail)
+		if (string.len(text) > limit) then
+			return string.sub(text, 0, limit - string.len(tail)) .. tail
+		else
+			return text
+		end
+	end;
+	wrapText = function(self, text, limit)
+		indent = indent or ""
+  	indent1 = indent1 or indent
+  	limit = limit or 72
+  	local here = 1 - #indent1
+  	return indent1 .. text:gsub("(%s+)()(%S+)()", function(sp, st, word, fi)
+      if (fi - here > limit) then
+        here = st - #indent
+        return "\n" .. indent .. word
+      end
+    end)
+	end;
+	splitText = function(self, str, pat)
+		local t = {}
+		local fpat = "(.-)" .. pat
+		local last_end = 1
+		local s, e, cap = str:find(fpat, 1)
+		while s do
+			if (s ~= 1 or cap ~= "") then
+				table.insert(t,cap)
+			end
+			last_end = e + 1
+			s, e, cap = str:find(fpat, last_end)
+		end
+		if (last_end <= #str) then
+			cap = str:sub(last_end)
+			table.insert(t, cap)
+		end
+		return t
+	end;
 }
 DrawUtils.mt = {
 	__index = function(table, key)
@@ -172,7 +209,7 @@ Window.prototype = {
 	visible = false;
 	closed = false;
 	--functions
-	draw = function(self) 
+	draw = function(self)
 		--drawPane
 		DrawUtils:drawRect(self.x, self.y, self.w, self.h, self.bgColor)
 		--drawTitle
@@ -254,7 +291,7 @@ Window.prototype = {
 	end;
 }
 Window.mt = {
-	__index = function (table, key) 
+	__index = function (table, key)
 		return Window.prototype[key]
 	end;
 }
@@ -314,7 +351,7 @@ Button.prototype = {
 		term.setTextColor((function(self) if (self.active) then return self.activeTextColor else return self.textColor end end)(self))
 		term.write(self.text)
 	end;
-	click = function (self, x, y) 
+	click = function (self, x, y)
 		if ((x >= self:termX()) and (x <= (self:termX() + self.w - 1)) and (y >= self:termY()) and (y <= (self:termY() + self.h - 1))) then
 			self.active = true
 			self:action()
@@ -325,7 +362,7 @@ Button.prototype = {
 	update = function(self) return false end;
 }
 Button.mt = {
-	__index = function (table, key) 
+	__index = function (table, key)
 		if (Button.prototype[key] ~= nil) then
 			return Button.prototype[key]
 		else
@@ -357,10 +394,12 @@ Label.prototype = {
 	--functions
 	draw = function(self)
 		DrawUtils:drawRect(self:termX(), self:termY(), self.w, self.h, self.bgColor)
-		term.setCursorPos(DrawUtils:alignText(self.textAlign, string.len(self.text), self:termX(), self.w), self:termY() + (self.h / 2))
 		term.setBackgroundColor(self.bgColor)
 		term.setTextColor(self.textColor)
-		term.write(self.text)
+		for k, v in ipairs(DrawUtils:splitText(self.text, "\n")) do
+			term.setCursorPos(DrawUtils:alignText(self.textAlign, string.len(v), self:termX(), self.w), self:termY() + k - 1)
+			term.write(v)
+		end
 	end;
 	update = function(self) return false end;
 }
@@ -423,7 +462,7 @@ TextField.prototype = {
 			term.setCursorPos(self:termX() + self.cursorPos - self.displayOffset, self:termY() + (self.h / 2))
 		end
 	end;
-	click = function (self, x, y) 
+	click = function (self, x, y)
 		if ((x >= self:termX()) and (x <= (self:termX() + self.w - 1)) and (y >= self:termY()) and (y <= (self:termY() + self.h - 1))) then
 			self.active = true
 			self:action()
@@ -517,6 +556,7 @@ List.prototype = {
 	scrollBarColor = colors.gray;
 	scrollBarTextColor = colors.white;
 	scrollBar = true;
+	wrapText = false;
 	displayOffset = 0;
 	components = {};
 	active = false;
@@ -528,7 +568,7 @@ List.prototype = {
 		local index = 1
 		for key, val in pairs(self.components) do
 			val.y = self.displayOffset + index
-			index = index + 1
+			index = index + val.h
 			if ((val.y > 0) and (val.y <= self.h)) then
 				val:draw()
 			end
@@ -545,7 +585,7 @@ List.prototype = {
 			term.write("v")
 		end
 	end;
-	click = function (self, x, y) 
+	click = function (self, x, y)
 		for key, val in pairs(self.components) do
 			if ((val.y > 0) and (val.y <= self.h)) then
 				val:click(x, y)
@@ -581,11 +621,19 @@ List.prototype = {
 					self.displayOffset = self.displayOffset - 1
 				end
 			end
-		end	
+		end
 	end;
 	addComponent = function(self, componentTbl)
 		componentTbl.h = 1
 		componentTbl.w = self.w - (self.scrollBar and 1 or 0)
+		if (not self.wrapText) then
+			componentTbl.text = DrawUtils:limitText(componentTbl.text, componentTbl.w, "...")
+		else
+			if (string.len(componentTbl.text) > componentTbl.w) then
+				componentTbl.h = math.ceil(string.len(componentTbl.text) / componentTbl.w)
+				componentTbl.text = DrawUtils:wrapText(componentTbl.text, componentTbl.w)
+			end
+		end
 		componentTbl.bgColor = (#self.components % 2 == 0 and self.bgColor or self.bgColorStripe)
 		componentTbl.textColor = (#self.components % 2 == 0 and self.textColor or self.textColorStripe)
 		componentTbl.textAlign = self.textAlign
@@ -651,7 +699,7 @@ Checkbox.prototype = {
 		term.setBackgroundColor(self.bgColor)
 		term.write(self.text)
 	end;
-	click = function (self, x, y) 
+	click = function (self, x, y)
 		if ((x >= self:termX()) and (x <= (self:termX() + self.w - 1)) and (y >= self:termY()) and (y <= (self:termY() + self.h - 1))) then
 			self.checked = not self.checked
 		end
