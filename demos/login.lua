@@ -1,7 +1,8 @@
 os.loadAPI("txUI.lua")
 local w, h = term.getSize()
 local window = txUI.Window:new({w = w; h = h;})
-local winIndex = txUI.UIManager:addWindow(window)
+txUI.UIManager:addWindow(window)
+txUI.UIManager:setVisibleWindow(window)
 window:setTitleLabel(txUI.Label:new({text = "txUI Login Demo"; bgColor = window.tlColor; textColor = colors.white; w = window.w; x = window.x; textAlign = "right";}))
 window:addComponent(txUI.Button:new({x = 1; y = 1; w = 1; h = 1; action = (function(self) self.parent:close() end); textColor = colors.red; bgColor = window.tlColor; text = "X";}))
 
