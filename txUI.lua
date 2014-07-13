@@ -345,7 +345,7 @@ Button.prototype = {
 		term.setTextColor((function(self) if (self.active) then return self.activeTextColor else return self.textColor end end)(self))
 		local lines = #DrawUtils:splitText(self.text, "\n")
 		for k, v in ipairs(DrawUtils:splitText(self.text, "\n")) do
-			term.setCursorPos(DrawUtils:alignText(self.textAlign, string.len(v), self:termX(), self.w), self:termY() - math.floor(lines / self.h) + k)
+			term.setCursorPos(DrawUtils:alignText(self.textAlign, string.len(v), self:termX(), self.w), self:termY() + k - 1 + ((self.h - lines) / 2))
 			term.write(v)
 		end
 	end;
@@ -396,7 +396,7 @@ Label.prototype = {
 		term.setTextColor(self.textColor)
 		local lines = #DrawUtils:splitText(self.text, "\n")
 		for k, v in ipairs(DrawUtils:splitText(self.text, "\n")) do
-			term.setCursorPos(DrawUtils:alignText(self.textAlign, string.len(v), self:termX(), self.w), self:termY() - math.floor(lines / self.h) + k)
+			term.setCursorPos(DrawUtils:alignText(self.textAlign, string.len(v), self:termX(), self.w), self:termY() + k - 1 + ((self.h - lines) / 2))
 			term.write(v)
 		end
 	end;
