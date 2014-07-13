@@ -154,15 +154,15 @@ DrawUtils.prototype = {
 	end;
 	wrapText = function(self, text, limit)
 		indent = indent or ""
-  	indent1 = indent1 or indent
-  	limit = limit or 72
-  	local here = 1 - #indent1
-  	return indent1 .. text:gsub("(%s+)()(%S+)()", function(sp, st, word, fi)
-      if (fi - here > limit) then
-        here = st - #indent
-        return "\n" .. indent .. word
-      end
-    end)
+		indent1 = indent1 or indent
+		limit = limit or 72
+		local here = 1 - #indent1
+		return indent1 .. text:gsub("(%s+)()(%S+)()", function(sp, st, word, fi)
+			if (fi - here > limit) then
+				here = st - #indent
+				return "\n" .. indent .. word
+			end
+		end)
 	end;
 	splitText = function(self, str, pat)
 		local t = {}
