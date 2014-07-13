@@ -4,43 +4,32 @@ local loginWindow = txUI.Window:new({w = w; h = h;})
 local contentWindow = txUI.Window:new({w = w; h = h;})
 
 txUI.UIManager:addWindow(loginWindow)
+loginWindow.onView = function(self)
+	self.components = {}
+	self.titleLabel = {}
+	self:setTitleLabel(txUI.Label:new({text = "txUI Windows Demo"; bgColor = self.tlColor; textColor = colors.white; w = self.w; x = self.x; textAlign = "right";}))
+	self:addComponent(txUI.Button:new({x = 1; y = 1; w = 1; h = 1; action = (function(self) txUI.UIManager:terminate() end); textColor = colors.red; bgColor = self.tlColor; text = "X";}))
+	self:addComponent(txUI.Label:new({x = 1; y = 5; w = w; text = "Login to txUI"; bgColor = colors.lightGray;}))
+	self:addComponent(txUI.Label:new({x = 4; y = 8; text = "Username"; textAlign = "left"; bgColor = colors.lightGray;}))
+	self:addComponent(txUI.TextField:new({x = 33; y = 8; placeholder = "Username";}))
+	self:addComponent(txUI.Label:new({x = 4; y = 10; text = "Password"; textAlign = "left"; bgColor = colors.lightGray;}))
+	self:addComponent(txUI.TextField:new({x = 33; y = 10; placeholder = "Password"; textMask = "*";}))
+	self:addComponent(txUI.Checkbox:new({x = 4; y = 12; text = "Remember me";}))
+	self:addComponent(txUI.Button:new({x = 33; y = 14; text = "Login"; action = (function(self) txUI.UIManager:setVisibleWindow(contentWindow) end);}))
+end
 txUI.UIManager:setVisibleWindow(loginWindow)
-loginWindow:setTitleLabel(txUI.Label:new({text = "txUI Login Demo"; bgColor = loginWindow.tlColor; textColor = colors.white; w = loginWindow.w; x = loginWindow.x; textAlign = "right";}))
-loginWindow:addComponent(txUI.Button:new({x = 1; y = 1; w = 1; h = 1; action = (function(self) txUI.UIManager:terminate() end); textColor = colors.red; bgColor = loginWindow.tlColor; text = "X";}))
-
-loginWindow:addComponent(txUI.Label:new({x = 1; y = 5; w = w; text = "Login to txUI"; bgColor = colors.lightGray;}))
-loginWindow:addComponent(txUI.Label:new({x = 4; y = 8; text = "Username"; textAlign = "left"; bgColor = colors.lightGray;}))
-loginWindow:addComponent(txUI.TextField:new({x = 33; y = 8; placeholder = "Username";}))
-loginWindow:addComponent(txUI.Label:new({x = 4; y = 10; text = "Password"; textAlign = "left"; bgColor = colors.lightGray;}))
-loginWindow:addComponent(txUI.TextField:new({x = 33; y = 10; placeholder = "Password"; textMask = "*";}))
-loginWindow:addComponent(txUI.Checkbox:new({x = 4; y = 12; text = "Remember me";}))
-loginWindow:addComponent(txUI.Button:new({x = 33; y = 14; text = "Login"; action = (function(self) txUI.UIManager:setVisibleWindow(contentWindow) end);}))
 
 txUI.UIManager:addWindow(contentWindow)
-contentWindow:setTitleLabel(txUI.Label:new({text = "txUI Login Demo"; bgColor = contentWindow.tlColor; textColor = colors.white; w = contentWindow.w; x = contentWindow.x; textAlign = "right";}))
-contentWindow:addComponent(txUI.Button:new({x = 1; y = 1; w = 8; h = 1; action = (function(self) txUI.UIManager:setVisibleWindow(loginWindow) end); textColor = colors.red; bgColor = contentWindow.tlColor; text = "< Logout";}))
-local list = txUI.List:new({x = 1; y = 2; w = w; h = h - 1;});
-contentWindow:addComponent(list)
-list:addComponent(txUI.Label:new({text = "1";}))
-list:addComponent(txUI.Label:new({text = "2";}))
-list:addComponent(txUI.Label:new({text = "3";}))
-list:addComponent(txUI.Label:new({text = "4";}))
-list:addComponent(txUI.Label:new({text = "5";}))
-list:addComponent(txUI.Label:new({text = "6";}))
-list:addComponent(txUI.Label:new({text = "7";}))
-list:addComponent(txUI.Label:new({text = "8";}))
-list:addComponent(txUI.Label:new({text = "9";}))
-list:addComponent(txUI.Label:new({text = "10";}))
-list:addComponent(txUI.Label:new({text = "11";}))
-list:addComponent(txUI.Label:new({text = "12";}))
-list:addComponent(txUI.Label:new({text = "13";}))
-list:addComponent(txUI.Label:new({text = "14";}))
-list:addComponent(txUI.Label:new({text = "15";}))
-list:addComponent(txUI.Label:new({text = "16";}))
-list:addComponent(txUI.Label:new({text = "17";}))
-list:addComponent(txUI.Label:new({text = "18";}))
-list:addComponent(txUI.Label:new({text = "19";}))
-list:addComponent(txUI.Label:new({text = "20";}))
-list:addComponent(txUI.Label:new({text = "21";}))
+contentWindow.onView = function(self)
+	self.components = {}
+	self.titleLabel = {}
+	self:setTitleLabel(txUI.Label:new({text = "txUI Windows Demo"; bgColor = self.tlColor; textColor = colors.white; w = self.w; x = self.x; textAlign = "right";}))
+	self:addComponent(txUI.Button:new({x = 1; y = 1; w = 8; h = 1; action = (function(self) txUI.UIManager:setVisibleWindow(loginWindow) end); textColor = colors.white; bgColor = self.tlColor; text = "< Logout";}))
+	local list = txUI.List:new({x = 1; y = 2; w = w; h = h - 1;});
+	self:addComponent(list)
+	for i = 1,21,1 do
+		list:addComponent(txUI.Label:new({text = i;}))
+	end
+end
 
 txUI.UIManager:startUpdateCycle()

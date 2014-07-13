@@ -84,7 +84,11 @@ UIManager.prototype = {
 	end;
 	setVisibleWindow = function(self, windowTbl)
 		for key, val in pairs(self.windows) do
+			local wasVisible = val.visible
 			val.visible = (val == windowTbl)
+			if (not wasVisible) then
+				val:onView()
+			end
 		end
 	end;
 	addWindow = function(self, windowTbl)
@@ -227,6 +231,8 @@ Window.prototype = {
 		for key, val in pairs(self.components) do
 			val:drag(x, y)
 		end
+	end;
+	onView = function(self)
 	end;
 	update = function(self)
 		local removed = {}
