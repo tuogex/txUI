@@ -89,6 +89,9 @@ UIManager.prototype = {
 			if (not wasVisible) then
 				val:onView()
 			end
+			if (wasVisible and not val.visible) then
+				val:onHide()
+			end
 		end
 	end;
 	addWindow = function(self, windowTbl)
@@ -233,6 +236,8 @@ Window.prototype = {
 		end
 	end;
 	onView = function(self)
+	end;
+	onHide = function(self)
 	end;
 	update = function(self)
 		local removed = {}
