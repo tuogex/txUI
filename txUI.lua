@@ -153,16 +153,11 @@ DrawUtils.prototype = {
 		end
 	end;
 	wrapText = function(self, text, limit)
-		indent = indent or ""
-		indent1 = indent1 or indent
-		limit = limit or 72
-		local here = 1 - #indent1
-		return indent1 .. text:gsub("(%s+)()(%S+)()", function(sp, st, word, fi)
-			if (fi - here > limit) then
-				here = st - #indent
-				return "\n" .. indent .. word
-			end
-		end)
+    	local index = 0
+    	return text:gsub("(%C?)", function (w)
+        	index = index + 1
+        	return w .. (index % limit == 0 and "\n" or "")
+    	end)
 	end;
 	splitText = function(self, str, pat)
 		local t = {}
@@ -347,9 +342,12 @@ Button.prototype = {
 	action = function(self) end;
 	draw = function(self)
 		DrawUtils:drawRect(self:termX(), self:termY(), self.w, self.h, (function(self) if (self.active) then return self.activeColor else return self.bgColor end end)(self))
-		term.setCursorPos(DrawUtils:alignText(self.textAlign, string.len(self.text), self:termX(), self.w), self:termY() + (self.h / 2))
 		term.setTextColor((function(self) if (self.active) then return self.activeTextColor else return self.textColor end end)(self))
-		term.write(self.text)
+		local lines = #DrawUtils:splitText(self.text, "\n")
+		for k, v in ipairs(DrawUtils:splitText(self.text, "\n")) do
+			term.setCursorPos(DrawUtils:alignText(self.textAlign, string.len(v), self:termX(), self.w), self:termY() - math.floor(lines / self.h) + k)
+			term.write(v)
+		end
 	end;
 	click = function (self, x, y)
 		if ((x >= self:termX()) and (x <= (self:termX() + self.w - 1)) and (y >= self:termY()) and (y <= (self:termY() + self.h - 1))) then
@@ -396,8 +394,9 @@ Label.prototype = {
 		DrawUtils:drawRect(self:termX(), self:termY(), self.w, self.h, self.bgColor)
 		term.setBackgroundColor(self.bgColor)
 		term.setTextColor(self.textColor)
+		local lines = #DrawUtils:splitText(self.text, "\n")
 		for k, v in ipairs(DrawUtils:splitText(self.text, "\n")) do
-			term.setCursorPos(DrawUtils:alignText(self.textAlign, string.len(v), self:termX(), self.w), self:termY() + k - 1)
+			term.setCursorPos(DrawUtils:alignText(self.textAlign, string.len(v), self:termX(), self.w), self:termY() - math.floor(lines / self.h) + k)
 			term.write(v)
 		end
 	end;

@@ -25,10 +25,11 @@ txUI.UIManager:addWindow(contentWindow)
 contentWindow.onView = function(self)
 	self:setTitleLabel(txUI.Label:new({text = "txUI Windows Demo"; bgColor = self.tlColor; textColor = colors.white; w = self.w; x = self.x; textAlign = "right";}))
 	self:addComponent(txUI.Button:new({x = 1; y = 1; w = 8; h = 1; action = (function(self) txUI.UIManager:setVisibleWindow(loginWindow) end); textColor = colors.white; bgColor = self.tlColor; text = "< Logout";}))
-	local list = txUI.List:new({x = 1; y = 2; w = w; h = h - 1;});
+	local list = txUI.List:new({x = 1; y = 2; w = w; h = h - 1; wrapText = true;});
 	self:addComponent(list)
+	list:addComponent(txUI.Button:new({text = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";}))
 	for i = 1,21,1 do
-		list:addComponent(txUI.Label:new({text = i;}))
+		list:addComponent(txUI.Label:new({text = "" .. i;}))
 	end
 end
 contentWindow.onHide = function(self)
