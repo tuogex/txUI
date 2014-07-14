@@ -56,6 +56,12 @@ UIManager.prototype = {
 						break
 					end
 				end
+			else
+				for key, val in pairs(self.windows) do
+					if (val.visible and val:event(event)) then
+						break
+					end
+				end
 			end
 		end
 		while (true) do
@@ -269,6 +275,11 @@ Window.prototype = {
 			val:drag(x, y)
 		end
 	end;
+	event = function(self, eventTbl) 
+		for key, val in pairs(self.components) do
+			val:event(eventTbl)
+		end
+	end;
 	onView = function(self)
 	end;
 	onHide = function(self)
@@ -319,6 +330,7 @@ Component.prototype = {
 	char = function(self, char) return false end;
 	scroll = function(self, direction) return false end;
 	drag = function(self, x, y, button) return false end;
+	event = function(self, eventTbl) return false end;
 	update = function(self) return false end;
 	termX = function(self) return self.x + self.parent.x - 1 end;
 	termY = function(self) return self.y + self.parent.y - 1 end;
@@ -388,6 +400,11 @@ Panel.prototype = {
 	drag = function(self, x, y)
 		for key, val in pairs(self.components) do
 			val:drag(x, y)
+		end
+	end;
+	event = function(self, eventTbl) 
+		for key, val in pairs(self.components) do
+			val:event(eventTbl)
 		end
 	end;
 	update = function(self)
