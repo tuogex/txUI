@@ -95,6 +95,7 @@ UIManager.prototype = {
 		end
 	end;
 	addWindow = function(self, windowTbl)
+		windowTbl.closed = false
 		table.insert(self.windows, windowTbl)
 	end;
 	closeWindow = function(self, windowTbl)
@@ -230,6 +231,7 @@ Window.prototype = {
 	end;
 	addComponent = function(self, componentTbl)
 		componentTbl.parent = self
+		componentTbl.removed = false
 		table.insert(self.components, componentTbl)
 	end;
 	removeComponent = function(self, componentTbl)
@@ -336,7 +338,6 @@ Panel.prototype = {
 	y = 1;
 	h = 1;
 	w = 1;
-	visible = false;
 	--functions
 	draw = function(self)
 		--drawPane
@@ -351,6 +352,7 @@ Panel.prototype = {
 	end;
 	addComponent = function(self, componentTbl)
 		componentTbl.parent = self
+		componentTbl.removed = false
 		table.insert(self.components, componentTbl)
 	end;
 	removeComponent = function(self, componentTbl)
@@ -737,6 +739,7 @@ List.prototype = {
 		componentTbl.activeColor = self.activeColor
 		componentTbl.activeTextColor = self.activeTextColor
 		componentTbl.parent = self
+		componentTbl.removed = false
 		table.insert(self.components, componentTbl)
 	end;
 	update = function(self) return false end;
