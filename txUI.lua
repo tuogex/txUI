@@ -466,13 +466,11 @@ TextField.prototype = {
 	click = function (self, x, y)
 		if ((x >= self:termX()) and (x <= (self:termX() + self.w - 1)) and (y >= self:termY()) and (y <= (self:termY() + self.h - 1))) then
 			self.active = true
-			self:action()
 		else
 			self.active = false
 		end
 	end;
 	action = function(self)
-		self:draw()
 	end;
 	key = function(self, keyCode)
 		if (self.active == false) then
@@ -503,6 +501,8 @@ TextField.prototype = {
 				end
 				self:draw()
 			end
+		elseif (keyCode == keys.enter) then
+			self:action()
 		end
 	end;
 	char = function(self, char)
