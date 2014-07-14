@@ -20,7 +20,7 @@ UIManager.prototype = {
 			end
 		end
 	end;
-	appUpdate = function(self) end;
+	appUpdate = function(self, eventTbl) end;
 	startUpdateCycle = function(self)
 		local handleEvent = function()
 			local event = {os.pullEventRaw()}
@@ -63,6 +63,7 @@ UIManager.prototype = {
 					end
 				end
 			end
+			return event
 		end
 		while (true) do
 			if (#self.windows == 0) then
@@ -74,8 +75,8 @@ UIManager.prototype = {
 					val:update()
 				end
 			end
-			handleEvent()
-			self:appUpdate();
+			local eventTbl = handleEvent()
+			self:appUpdate(eventTbl);
 			--close windows marked for close
 			local closed = {}
 			for key, val in pairs(self.windows) do
