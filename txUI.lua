@@ -566,6 +566,7 @@ List.prototype = {
 		-- draw the components
 		local index = 1
 		for key, val in pairs(self.components) do
+			val.w = self.w - (self.scrollBar and 1 or 0)
 			val.y = self.displayOffset + index
 			index = index + val.h
 			if ((val.y > 0) and (val.y <= self.h)) then
