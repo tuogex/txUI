@@ -297,6 +297,32 @@ function Window:new(windowTbl)
 end
 
 -- --
+-- Component @abstract
+-- Abstract class used to represent components in a window
+-- --
+Component = {}
+Component.prototype = {
+	--vars
+	x = 1;
+	y = 1;
+	h = 1;
+	w = 1;
+	z = 0;
+	parent = {};
+	removed = false;
+	--functions
+	draw = function(self) end;
+	click = function(self, x, y, button) return false end;
+	key = function(self, keyCode) return false end;
+	char = function(self, char) return false end;
+	scroll = function(self, direction) return false end;
+	drag = function(self, x, y, button) return false end;
+	update = function(self) return false end;
+	termX = function(self) return self.x + self.parent.x - 1 end;
+	termY = function(self) return self.y + self.parent.y - 1 end;
+}
+
+-- --
 -- Panel
 -- Pretty self explainatory
 -- --
@@ -384,7 +410,11 @@ Panel.prototype = {
 }
 Panel.mt = {
 	__index = function (table, key)
-		return Panel.prototype[key]
+		if (Panel.prototype[key] ~= nil) then
+			return Panel.prototype[key]
+		else
+			return Component.prototype[key]
+		end
 	end;
 }
 function Panel:new(panelTbl)
@@ -392,32 +422,6 @@ function Panel:new(panelTbl)
 	panelTbl.components = {}
 	return panelTbl
 end
-
--- --
--- Component @abstract
--- Abstract class used to represent components in a window
--- --
-Component = {}
-Component.prototype = {
-	--vars
-	x = 1;
-	y = 1;
-	h = 1;
-	w = 1;
-	z = 0;
-	parent = {};
-	removed = false;
-	--functions
-	draw = function(self) end;
-	click = function(self, x, y, button) return false end;
-	key = function(self, keyCode) return false end;
-	char = function(self, char) return false end;
-	scroll = function(self, direction) return false end;
-	drag = function(self, x, y, button) return false end;
-	update = function(self) return false end;
-	termX = function(self) return self.x + self.parent.x - 1 end;
-	termY = function(self) return self.y + self.parent.y - 1 end;
-}
 
 -- --
 -- Button extends Component
