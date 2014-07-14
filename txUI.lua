@@ -341,12 +341,6 @@ Panel.prototype = {
 	draw = function(self)
 		--drawPane
 		DrawUtils:drawRect(self.x, self.y, self.w, self.h, self.bgColor)
-		--drawTitle
-		term.setBackgroundColor(self.tlColor)
-		term.setCursorPos(self.x, self.y)
-		for pX = self.x, self.w + self.x, 1 do
-			term.write(" ")
-		end
 		--draw components
 		self:drawComponents()
 	end;
