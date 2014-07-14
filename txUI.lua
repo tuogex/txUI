@@ -338,6 +338,7 @@ Button.prototype = {
 	active = false;
 	text = "txUI Button";
 	textAlign = "center";
+	vertCenter = true;
 	--functions
 	action = function(self) end;
 	draw = function(self)
@@ -345,7 +346,7 @@ Button.prototype = {
 		term.setTextColor((function(self) if (self.active) then return self.activeTextColor else return self.textColor end end)(self))
 		local lines = #DrawUtils:splitText(self.text, "\n")
 		for k, v in ipairs(DrawUtils:splitText(self.text, "\n")) do
-			term.setCursorPos(DrawUtils:alignText(self.textAlign, string.len(v), self:termX(), self.w), self:termY() + k - 1 + ((self.h - lines) / 2))
+			term.setCursorPos(DrawUtils:alignText(self.textAlign, string.len(v), self:termX(), self.w), self:termY() + k - 1 + (self.vertCenter and ((self.h - lines) / 2) or 0))
 			term.write(v)
 		end
 	end;
@@ -389,6 +390,7 @@ Label.prototype = {
 	textColor = colors.black;
 	text = "txUI Label";
 	textAlign = "center";
+	vertCenter = true;
 	--functions
 	draw = function(self)
 		DrawUtils:drawRect(self:termX(), self:termY(), self.w, self.h, self.bgColor)
@@ -396,7 +398,7 @@ Label.prototype = {
 		term.setTextColor(self.textColor)
 		local lines = #DrawUtils:splitText(self.text, "\n")
 		for k, v in ipairs(DrawUtils:splitText(self.text, "\n")) do
-			term.setCursorPos(DrawUtils:alignText(self.textAlign, string.len(v), self:termX(), self.w), self:termY() + k - 1 + ((self.h - lines) / 2))
+			term.setCursorPos(DrawUtils:alignText(self.textAlign, string.len(v), self:termX(), self.w), self:termY() + k - 1 + (self.vertCenter and ((self.h - lines) / 2) or 0))
 			term.write(v)
 		end
 	end;
