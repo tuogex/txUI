@@ -297,6 +297,103 @@ function Window:new(windowTbl)
 end
 
 -- --
+-- Panel
+-- Pretty self explainatory
+-- --
+Panel = {}
+Panel.prototype = {
+	-- vars
+	bgColor = colors.lightGray;
+	components = {};
+	z = 0;
+	x = 1;
+	y = 1;
+	h = 1;
+	w = 1;
+	visible = false;
+	--functions
+	draw = function(self)
+		--drawPane
+		DrawUtils:drawRect(self.x, self.y, self.w, self.h, self.bgColor)
+		--drawTitle
+		term.setBackgroundColor(self.tlColor)
+		term.setCursorPos(self.x, self.y)
+		for pX = self.x, self.w + self.x, 1 do
+			term.write(" ")
+		end
+		--draw components
+		self:drawComponents()
+	end;
+	drawComponents = function(self)
+		for key, val in pairs(self.components) do
+			val:draw()
+		end
+	end;
+	addComponent = function(self, componentTbl)
+		componentTbl.parent = self
+		table.insert(self.components, componentTbl)
+	end;
+	removeComponent = function(self, componentTbl)
+		for key, val in pairs(self.components) do
+			if (val == componentTbl) then
+				val.removed = true
+			end
+		end
+	end;
+	close = function(self)
+		UIManager:closeWindow(self)
+	end;
+	click = function(self, x, y)
+		for key, val in pairs(self.components) do
+			val:click(x, y)
+		end
+	end;
+	key = function(self, keyCode)
+		for key, val in pairs(self.components) do
+			val:key(keyCode)
+		end
+	end;
+	char = function(self, char)
+		for key, val in pairs(self.components) do
+			val:char(char)
+		end
+	end;
+	scroll = function(self, direction)
+		for key, val in pairs(self.components) do
+			val:scroll(direction)
+		end
+	end;
+	drag = function(self, x, y)
+		for key, val in pairs(self.components) do
+			val:drag(x, y)
+		end
+	end;
+	update = function(self)
+		local removed = {}
+		for key, val in pairs(self.components) do
+			if (val.removed) then
+				table.insert(removed, key)
+			else
+				val:update()
+			end
+		end
+		for key, val in pairs(removed) do
+			table.remove(self.components, val)
+		end
+	end;
+}
+Panel.mt = {
+	__index = function (table, key)
+		return Panel.prototype[key]
+	end;
+}
+function Panel:new(panelTbl)
+	setmetatable(panelTbl, Panel.mt)
+	panelTbl.components = {}
+	return panelTbl
+end
+
+-- --
 -- Component @abstract
 -- Abstract class used to represent components in a window
 -- --
