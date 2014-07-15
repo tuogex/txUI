@@ -161,11 +161,11 @@ DrawUtils.prototype = {
 		end
 	end;
 	wrapText = function(self, text, limit)
-    	local index = 0
-    	return text:gsub("(%C?)", function (w)
-        	index = index + 1
-        	return w .. (index % limit == 0 and "\n" or "")
-    	end)
+    		local index = 0
+    		return text:gsub("(%C?)", function (w)
+        		index = index + 1
+        		return w .. (index % limit == 0 and "\n" or "")
+    		end)
 	end;
 	splitText = function(self, str, pat)
 		local t = {}
