@@ -23,7 +23,10 @@ UIManager.prototype = {
 	appUpdate = function(self, eventTbl) end;
 	startUpdateCycle = function(self)
 		local handleEvent = function()
-			local event = {os.pullEventRaw()}
+			local event
+			repeat
+				event = {os.pullEventRaw()}
+			until(event[1] ~= "timer")
 			if (event[1] == "terminate") then
 				self:terminate()
 			elseif (event[1] == "mouse_click" or event[1] == "monitor_touch") then
@@ -85,7 +88,7 @@ UIManager.prototype = {
 				end
 			end
 			for key, val in pairs(closed) do
-				table.remove(self.windows, val)
+				self.windows[val] = nil
 			end
 		end
 	end;
@@ -276,7 +279,7 @@ Window.prototype = {
 			val:drag(x, y)
 		end
 	end;
-	event = function(self, eventTbl) 
+	event = function(self, eventTbl)
 		for key, val in pairs(self.components) do
 			val:event(eventTbl)
 		end
@@ -295,7 +298,7 @@ Window.prototype = {
 			end
 		end
 		for key, val in pairs(removed) do
-			table.remove(self.components, val)
+			self.components[val] = nil
 		end
 	end;
 }
@@ -403,7 +406,7 @@ Panel.prototype = {
 			val:drag(x, y)
 		end
 	end;
-	event = function(self, eventTbl) 
+	event = function(self, eventTbl)
 		for key, val in pairs(self.components) do
 			val:event(eventTbl)
 		end
@@ -418,7 +421,7 @@ Panel.prototype = {
 			end
 		end
 		for key, val in pairs(removed) do
-			table.remove(self.components, val)
+			self.components[val] = nil
 		end
 	end;
 }
