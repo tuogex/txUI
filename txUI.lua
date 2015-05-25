@@ -360,6 +360,14 @@ Component.prototype = {
 	update = function(self) return false end;
 	termX = function(self) return self.x + self.parent.x - 1 end;
 	termY = function(self) return self.y + self.parent.y - 1 end;
+	setPos = function(self, x, y)
+		self.x = x;
+		self.y = y;
+	end;
+	setSize = function(self, w, h)
+		self.w = w;
+		self.h = h;
+	end;
 }
 
 -- --
