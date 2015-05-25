@@ -1,19 +1,29 @@
 -- --
 -- txUI - ComputerCraft User Interface Library
--- dev
+-- rel
 -- tuogex
 -- --
 
 -- --
--- UIManager @static
+-- Controller @static
 -- Holds the windows of the program and handles events
 -- --
-UIManager = {}
-UIManager.prototype = {
+Controller = {}
+Controller.prototype = {
 	--vars
+	components = {};
 	windows = {};
+	termSize = {};
+	spaceColor = colors.white;
 	--functions
 	drawAll = function(self)
+		local w, h = term.getSize()
+		Utils:drawRect(1, 1, w, h, self.spaceColor)
+		for key, val in pairs(self.components) do
+			if (val.visible) then
+				val:draw()
+			end
+		end
 		for key, val in pairs(self.windows) do
 			if (val.visible) then
 				val:draw()
@@ -22,6 +32,7 @@ UIManager.prototype = {
 	end;
 	appUpdate = function(self, eventTbl) end;
 	startUpdateCycle = function(self)
+		self.termSize = term.getSize()
 		local handleEvent = function()
 			local event
 			repeat
@@ -30,36 +41,66 @@ UIManager.prototype = {
 			if (event[1] == "terminate") then
 				self:terminate()
 			elseif (event[1] == "mouse_click" or event[1] == "monitor_touch") then
+				for key, val in pairs(self.components) do
+					if (val.visible and val:click(event[3], event[4], event[2])) then
+						break
+					end
+				end
 				for key, val in pairs(self.windows) do
 					if (val.visible and val:click(event[3], event[4], event[2])) then
 						break
 					end
 				end
 			elseif (event[1] == "mouse_scroll") then
+				for key, val in pairs(self.components) do
+					if (val.visible and val:scroll(event[2])) then
+						break
+					end
+				end
 				for key, val in pairs(self.windows) do
 					if (val.visible and val:scroll(event[2])) then
 						break
 					end
 				end
 			elseif (event[1] == "mouse_drag") then
+				for key, val in pairs(self.components) do
+					if (val.visible and val:drag(event[3], event[4], event[2])) then
+						break
+					end
+				end
 				for key, val in pairs(self.windows) do
 					if (val.visible and val:drag(event[3], event[4], event[2])) then
 						break
 					end
 				end
 			elseif (event[1] == "char") then
+				for key, val in pairs(self.components) do
+					if (val.visible and val:char(event[2])) then
+						break
+					end
+				end
 				for key, val in pairs(self.windows) do
 					if (val.visible and val:char(event[2])) then
 						break
 					end
 				end
 			elseif (event[1] == "key") then
+				for key, val in pairs(self.components) do
+					if (val.visible and val:key(event[2])) then
+						break
+					end
+				end
 				for key, val in pairs(self.windows) do
 					if (val.visible and val:key(event[2])) then
 						break
 					end
 				end
 			else
+				for key, val in pairs(self.components) do
+					if (val.visible and val:event(event)) then
+						break
+					end
+				end
 				for key, val in pairs(self.windows) do
 					if (val.visible and val:event(event)) then
 						break
@@ -73,6 +114,11 @@ UIManager.prototype = {
 				self:exit()
 			end
 			self:drawAll()
+			for key, val in pairs(self.components) do
+				if (val.visible) then
+					val:update()
+				end
+			end
 			for key, val in pairs(self.windows) do
 				if (val.visible) then
 					val:update()
@@ -80,6 +126,18 @@ UIManager.prototype = {
 			end
 			local eventTbl = handleEvent()
 			self:appUpdate(eventTbl);
+			--remove components marked for removal
+			local removed = {}
+			for key, val in pairs(self.components) do
+				if (val.removed) then
+					table.insert(removed, key)
+				else
+					val:update()
+				end
+			end
+			for key, val in pairs(removed) do
+				self.components[val] = nil
+			end
 			--close windows marked for close
 			local closed = {}
 			for key, val in pairs(self.windows) do
@@ -115,6 +173,22 @@ UIManager.prototype = {
 			end
 		end
 	end;
+	addComponent = function(self, componentTbl)
+		componentTbl.parent = self
+		componentTbl.parent.x = 1
+		componentTbl.parent.y = 1
+		componentTbl.parent.w = self.termSize[1]
+		componentTbl.parent.h = self.termSize[2]
+		componentTbl.removed = false
+		table.insert(self.components, componentTbl)
+	end;
+	removeComponent = function(self, componentTbl)
+		for key, val in pairs(self.components) do
+			if (val == componentTbl) then
+				val.removed = true
+			end
+		end
+	end;
 	terminate = function(self)
 		self:exit()
 	end;
@@ -147,19 +221,19 @@ UIManager.prototype = {
 		return oldComponent;
 	end;
 }
-UIManager.mt = {
+Controller.mt = {
 	__index = function (table, key)
-		return UIManager.prototype[key]
+		return Controller.prototype[key]
 	end;
 }
-setmetatable(UIManager, UIManager.mt)
+setmetatable(Controller, Controller.mt)
 
 -- --
--- DrawUtils @static
--- Utilities to aid in drawing
+-- Utils @static
+-- Utilities to aid in UI design
 -- --
-DrawUtils = {}
-DrawUtils.prototype = {
+Utils = {}
+Utils.prototype = {
 	drawRect = function(self, x, y, w, h, color)
 		term.setBackgroundColor(color)
 		for pY = y, h - 1 + y, 1 do
@@ -211,12 +285,12 @@ DrawUtils.prototype = {
 		return t
 	end;
 }
-DrawUtils.mt = {
+Utils.mt = {
 	__index = function(table, key)
-		return DrawUtils.prototype[key]
+		return Utils.prototype[key]
 	end;
 }
-setmetatable(DrawUtils, DrawUtils.mt)
+setmetatable(Utils, Utils.mt)
 
 -- --
 -- Window
@@ -234,16 +308,24 @@ Window.prototype = {
 	y = 1;
 	h = 1;
 	w = 1;
+	draggable = false;
+	lastClick = {};
+	hasShadow = false;
+	shadowColor = colors.black;
 	visible = false;
 	closed = false;
 	--functions
 	draw = function(self)
+		--draw shadow
+		if (self.hasShadow) then
+			Utils:drawRect(self.x + 1, self.y + 1, self.w, self.h, self.shadowColor)
+		end
 		--drawPane
-		DrawUtils:drawRect(self.x, self.y, self.w, self.h, self.bgColor)
+		Utils:drawRect(self.x, self.y, self.w, self.h, self.bgColor)
 		--drawTitle
 		term.setBackgroundColor(self.tlColor)
 		term.setCursorPos(self.x, self.y)
-		for pX = self.x, self.w + self.x, 1 do
+		for pX = self.x, self.w + self.x - 1, 1 do
 			term.write(" ")
 		end
 		if (self.titleLabel ~= nil) then
@@ -254,7 +336,9 @@ Window.prototype = {
 	end;
 	drawComponents = function(self)
 		for key, val in pairs(self.components) do
-			val:draw()
+			if (val.visible) then
+				val:draw()
+			end
 		end
 	end;
 	setTitleLabel = function(self, newLabel)
@@ -274,9 +358,16 @@ Window.prototype = {
 		end
 	end;
 	close = function(self)
-		UIManager:closeWindow(self)
+		Controller:closeWindow(self)
 	end;
 	click = function(self, x, y)
+		if (self.draggable and ((x >= self.x) and (x <= (self.x + self.w - 1)) and (y >= self.y) and (y <= self.y))) then
+			self.lastClick.x = x
+			self.lastClick.y = y
+		else
+			self.lastClick.x = nil;
+			self.lastClick.y = nil;
+		end
 		for key, val in pairs(self.components) do
 			val:click(x, y)
 		end
@@ -297,6 +388,12 @@ Window.prototype = {
 		end
 	end;
 	drag = function(self, x, y)
+		if (self.draggable and self.lastClick.x ~= nil) then
+			self.x = self.x + x - self.lastClick.x
+			self.y = self.y + y - self.lastClick.y
+			self.lastClick.x = x
+			self.lastClick.y = y
+		end
 		for key, val in pairs(self.components) do
 			val:drag(x, y)
 		end
@@ -349,6 +446,7 @@ Component.prototype = {
 	z = 0;
 	parent = {};
 	removed = false;
+	visible = true;
 	--functions
 	draw = function(self) end;
 	click = function(self, x, y, button) return false end;
@@ -387,7 +485,7 @@ Panel.prototype = {
 	--functions
 	draw = function(self)
 		--drawPane
-		DrawUtils:drawRect(self.x, self.y, self.w, self.h, self.bgColor)
+		Utils:drawRect(self.x, self.y, self.w, self.h, self.bgColor)
 		--draw components
 		self:drawComponents()
 	end;
@@ -409,7 +507,7 @@ Panel.prototype = {
 		end
 	end;
 	close = function(self)
-		UIManager:closeWindow(self)
+		Controller:closeWindow(self)
 	end;
 	click = function(self, x, y)
 		for key, val in pairs(self.components) do
@@ -490,11 +588,11 @@ Button.prototype = {
 	--functions
 	action = function(self) end;
 	draw = function(self)
-		DrawUtils:drawRect(self:termX(), self:termY(), self.w, self.h, (function(self) if (self.active) then return self.activeColor else return self.bgColor end end)(self))
+		Utils:drawRect(self:termX(), self:termY(), self.w, self.h, (function(self) if (self.active) then return self.activeColor else return self.bgColor end end)(self))
 		term.setTextColor((function(self) if (self.active) then return self.activeTextColor else return self.textColor end end)(self))
-		local lines = #DrawUtils:splitText(self.text, "\n")
-		for k, v in ipairs(DrawUtils:splitText(self.text, "\n")) do
-			term.setCursorPos(DrawUtils:alignText(self.textAlign, string.len(v), self:termX(), self.w), self:termY() + k - 1 + (self.vertCenter and ((self.h - lines) / 2) or 0))
+		local lines = #Utils:splitText(self.text, "\n")
+		for k, v in ipairs(Utils:splitText(self.text, "\n")) do
+			term.setCursorPos(Utils:alignText(self.textAlign, string.len(v), self:termX(), self.w), self:termY() + k - 1 + (self.vertCenter and ((self.h - lines) / 2) or 0))
 			term.write(v)
 		end
 	end;
@@ -541,12 +639,12 @@ Label.prototype = {
 	vertCenter = true;
 	--functions
 	draw = function(self)
-		DrawUtils:drawRect(self:termX(), self:termY(), self.w, self.h, self.bgColor)
+		Utils:drawRect(self:termX(), self:termY(), self.w, self.h, self.bgColor)
 		term.setBackgroundColor(self.bgColor)
 		term.setTextColor(self.textColor)
-		local lines = #DrawUtils:splitText(self.text, "\n")
-		for k, v in ipairs(DrawUtils:splitText(self.text, "\n")) do
-			term.setCursorPos(DrawUtils:alignText(self.textAlign, string.len(v), self:termX(), self.w), self:termY() + k - 1 + (self.vertCenter and ((self.h - lines) / 2) or 0))
+		local lines = #Utils:splitText(self.text, "\n")
+		for k, v in ipairs(Utils:splitText(self.text, "\n")) do
+			term.setCursorPos(Utils:alignText(self.textAlign, string.len(v), self:termX(), self.w), self:termY() + k - 1 + (self.vertCenter and ((self.h - lines) / 2) or 0))
 			term.write(v)
 		end
 	end;
@@ -590,19 +688,19 @@ TextField.prototype = {
 	displayOffset = 0;
 	--functions
 	draw = function(self)
-		DrawUtils:drawRect(self:termX(), self:termY(), self.w, self.h, self.bgColor)
+		Utils:drawRect(self:termX(), self:termY(), self.w, self.h, self.bgColor)
 		term.setBackgroundColor(self.bgColor)
 		if (self.active or string.len(self.text) ~= 0) then
 			local toWrite = string.sub(self.text, self.displayOffset + 1, self.displayOffset + self.w)
 			if (string.len(self.textMask) ~= 0) then
 				toWrite = string.gsub(toWrite, "%C", self.textMask)
 			end
-			term.setCursorPos(DrawUtils:alignText(self.textAlign, string.len(toWrite), self:termX(), self.w), self:termY() + (self.h / 2))
+			term.setCursorPos(Utils:alignText(self.textAlign, string.len(toWrite), self:termX(), self.w), self:termY() + (self.h / 2))
 			term.setTextColor(self.textColor)
 			term.write(toWrite)
 		else
 			local toWrite = string.sub(self.placeholder, self.displayOffset + 1)
-			term.setCursorPos(DrawUtils:alignText(self.textAlign, string.len(toWrite), self:termX(), self.w), self:termY() + (self.h / 2))
+			term.setCursorPos(Utils:alignText(self.textAlign, string.len(toWrite), self:termX(), self.w), self:termY() + (self.h / 2))
 			term.setTextColor(self.placeholderColor)
 			term.write(toWrite)
 		end
@@ -711,7 +809,7 @@ List.prototype = {
 	active = false;
 	--functions
 	draw = function(self)
-		DrawUtils:drawRect(self:termX(), self:termY(), self.w, self.h, self.bgColor)
+		Utils:drawRect(self:termX(), self:termY(), self.w, self.h, self.bgColor)
 		term.setBackgroundColor(self.bgColor)
 		-- draw the components
 		local index = 1
@@ -726,7 +824,7 @@ List.prototype = {
 		end
 		-- draw the scroll bar
 		if (self.scrollBar) then
-			DrawUtils:drawRect(self:termX() + self.w - 1, self:termY(), 1, self.h, self.scrollBarColor)
+			Utils:drawRect(self:termX() + self.w - 1, self:termY(), 1, self.h, self.scrollBarColor)
 			term.setBackgroundColor(self.scrollBarColor)
 			term.setTextColor(self.scrollBarTextColor)
 			term.setCursorPos(self:termX() + self.w - 1, self:termY())
@@ -777,11 +875,11 @@ List.prototype = {
 		componentTbl.h = 1
 		componentTbl.w = self.w - (self.scrollBar and 1 or 0)
 		if (not self.wrapText) then
-			componentTbl.text = DrawUtils:limitText(componentTbl.text, componentTbl.w, "...")
+			componentTbl.text = Utils:limitText(componentTbl.text, componentTbl.w, "...")
 		else
 			if (string.len(componentTbl.text) > componentTbl.w) then
 				componentTbl.h = math.ceil(string.len(componentTbl.text) / componentTbl.w)
-				componentTbl.text = DrawUtils:wrapText(componentTbl.text, componentTbl.w)
+				componentTbl.text = Utils:wrapText(componentTbl.text, componentTbl.w)
 			end
 		end
 		componentTbl.bgColor = (#self.components % 2 == 0 and self.bgColor or self.bgColorStripe)
@@ -831,17 +929,17 @@ Checkbox.prototype = {
 	textPosition = "right";
 	--functions
 	draw = function(self)
-		DrawUtils:drawRect(self:termX(), self:termY(), self.w, self.h, self.bgColor)
+		Utils:drawRect(self:termX(), self:termY(), self.w, self.h, self.bgColor)
 		-- draw box and set label position
 		term.setBackgroundColor(self.boxColor)
 		term.setTextColor(self.textColor)
 		if (self.textPosition == "right") then
-			DrawUtils:drawRect(self:termX(), self:termY(), 1, 1, self.boxColor)
+			Utils:drawRect(self:termX(), self:termY(), 1, 1, self.boxColor)
 			term.setCursorPos(self:termX(), self:termY())
 			term.write(self.checked and self.checkedChar or " ")
 			term.setCursorPos(self:termX() + 2, self:termY())
 		elseif (self.textPosition == "left") then
-			DrawUtils:drawRect(self:termX() + self.w - 1, self:termY(), 1, 1, self.boxColor)
+			Utils:drawRect(self:termX() + self.w - 1, self:termY(), 1, 1, self.boxColor)
 			term.setCursorPos(self:termX() + self.w - 1, self:termY())
 			term.write(self.checked and self.checkedChar or " ")
 			term.setCursorPos(self:termX() + self.w - string.len(self.text) - 2, self:termY())
@@ -872,4 +970,75 @@ function Checkbox:new(checkboxTbl)
 	end
 	setmetatable(checkboxTbl, Checkbox.mt)
 	return checkboxTbl
+end
+
+-- --
+-- ProgressBar extends Component
+-- A component that shows progress
+-- --
+ProgressBar = {}
+ProgressBar.prototype = {
+	--vars
+	h = 1;
+	w = 16;
+	val = 0;
+	bgColor = colors.white;
+	barColor = colors.lime;
+	textColor = colors.black;
+	barTextColor = colors.white;
+	textAlign = "center";
+	textMask = "{val}%";
+	showText = true;
+	vertCenter = true;
+	--functions
+	draw = function(self)
+		if (self.val > 100) then
+			self.val = 100
+		end
+		local barWidth = self.w * (self.val / 100)
+		Utils:drawRect(self:termX(), self:termY(), self.w, self.h, self.bgColor)
+		Utils:drawRect(self:termX(), self:termY(), barWidth, self.h, self.barColor)
+		if (self.showText) then
+			local text = string.gsub(self.textMask, "{val}", tostring(self.val))
+			term.setBackgroundColor(self.bgColor)
+			term.setTextColor(self.textColor)
+			local lines = #Utils:splitText(text, "\n")
+			for k, v in ipairs(Utils:splitText(text, "\n")) do
+				term.setCursorPos(Utils:alignText(self.textAlign, string.len(v), self:termX(), self.w), self:termY() + k - 1 + (self.vertCenter and ((self.h - lines) / 2) or 0))
+				local x, y = term.getCursorPos()
+				if (x - self:termX() < barWidth) then
+					term.setBackgroundColor(self.barColor)
+					term.setTextColor(self.barTextColor)
+					term.write(v)
+					if (x - self:termX() + string.len(v) > barWidth) then
+						term.setBackgroundColor(self.bgColor)
+						term.setTextColor(self.textColor)
+						local overflow = x - self:termX() + string.len(v) - barWidth
+						local ax, ay = term.getCursorPos()
+						term.setCursorPos(ax - overflow, ay)
+						term.write(string.sub(v, math.abs(string.len(v) - overflow) + 1))
+					end
+				else
+					term.write(v)
+				end
+			end
+		end
+	end;
+	update = function(self) return false end;
+}
+ProgressBar.mt = {
+	__index = function (table, key)
+		if (ProgressBar.prototype[key] ~= nil) then
+			return ProgressBar.prototype[key]
+		else
+			return Component.prototype[key]
+		end
+	end;
+}
+function ProgressBar:new(progressBarTbl)
+	if (progressBarTbl == nil) then
+		progressBarTbl = self
+	end
+	setmetatable(progressBarTbl, ProgressBar.mt)
+	return progressBarTbl
 end
