@@ -138,7 +138,14 @@ UIManager.prototype = {
 			res[self:cloneComponent(k, c)] = self:cloneComponent(v, c)
 		end
 		return res
-	end
+	end;
+	inheritComponent = function(self, obj, newTbl)
+		local oldComponent = self:cloneComponent(obj)
+		for k, v in pairs(newTbl) do
+			oldComponent[k] = v;
+		end 
+		return oldComponent;
+	end;
 }
 UIManager.mt = {
 	__index = function (table, key)
