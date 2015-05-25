@@ -889,6 +889,7 @@ ProgressBar.prototype = {
 	textColor = colors.black;
 	barTextColor = colors.white;
 	textAlign = "center";
+	showText = true;
 	vertCenter = true;
 	--functions
 	draw = function(self)
@@ -898,26 +899,28 @@ ProgressBar.prototype = {
 		local barWidth = self.w * (self.val / 100)
 		DrawUtils:drawRect(self:termX(), self:termY(), self.w, self.h, self.bgColor)
 		DrawUtils:drawRect(self:termX(), self:termY(), barWidth, self.h, self.barColor)
-		term.setBackgroundColor(self.bgColor)
-		term.setTextColor(self.textColor)
-		local lines = #DrawUtils:splitText(tostring(self.val), "\n")
-		for k, v in ipairs(DrawUtils:splitText(tostring(self.val), "\n")) do
-			term.setCursorPos(DrawUtils:alignText(self.textAlign, string.len(v), self:termX(), self.w), self:termY() + k - 1 + (self.vertCenter and ((self.h - lines) / 2) or 0))
-			local x, y = term.getCursorPos()
-			if (x - self:termX() < barWidth) then
-				term.setBackgroundColor(self.barColor)
-				term.setTextColor(self.barTextColor)
-				term.write(v)
-				if (x - self:termX() + string.len(v) > barWidth) then
-					term.setBackgroundColor(self.bgColor)
-					term.setTextColor(self.textColor)
-					local overflow = x - self:termX() + string.len(v) - barWidth
-					local ax, ay = term.getCursorPos()
-					term.setCursorPos(ax - overflow, ay)
-					term.write(string.sub(v, math.abs(string.len(v) - overflow) + 1))
+		if (showText) then
+			term.setBackgroundColor(self.bgColor)
+			term.setTextColor(self.textColor)
+			local lines = #DrawUtils:splitText(tostring(self.val), "\n")
+			for k, v in ipairs(DrawUtils:splitText(tostring(self.val), "\n")) do
+				term.setCursorPos(DrawUtils:alignText(self.textAlign, string.len(v), self:termX(), self.w), self:termY() + k - 1 + (self.vertCenter and ((self.h - lines) / 2) or 0))
+				local x, y = term.getCursorPos()
+				if (x - self:termX() < barWidth) then
+					term.setBackgroundColor(self.barColor)
+					term.setTextColor(self.barTextColor)
+					term.write(v)
+					if (x - self:termX() + string.len(v) > barWidth) then
+						term.setBackgroundColor(self.bgColor)
+						term.setTextColor(self.textColor)
+						local overflow = x - self:termX() + string.len(v) - barWidth
+						local ax, ay = term.getCursorPos()
+						term.setCursorPos(ax - overflow, ay)
+						term.write(string.sub(v, math.abs(string.len(v) - overflow) + 1))
+					end
+				else
+					term.write(v)
 				end
-			else
-				term.write(v)
 			end
 		end
 	end;
