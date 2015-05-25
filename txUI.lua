@@ -124,6 +124,21 @@ UIManager.prototype = {
 		term.setCursorPos(1, 1)
 		error()
 	end;
+	cloneComponent = function(obj, copied)
+		if type(obj) ~= 'table' then
+			return obj
+		end
+		if copied and copied[obj] then
+			return copied[obj]
+		end
+		local c = copied or {}
+		local res = setmetatable({}, getmetatable(obj))
+		c[obj] = res
+		for k, v in pairs(obj) do
+			res[self:cloneComponent(k, c)] = self:cloneComponent(v, c)
+		end
+		return res
+	end
 }
 UIManager.mt = {
 	__index = function (table, key)
