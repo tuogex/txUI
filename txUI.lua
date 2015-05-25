@@ -124,7 +124,7 @@ UIManager.prototype = {
 		term.setCursorPos(1, 1)
 		error()
 	end;
-	cloneComponent = function(obj, copied)
+	cloneComponent = function(self, obj, copied)
 		if type(obj) ~= 'table' then
 			return obj
 		end
