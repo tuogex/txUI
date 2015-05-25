@@ -12,8 +12,11 @@ UIManager = {}
 UIManager.prototype = {
 	--vars
 	windows = {};
+	spaceColor = colors.white;
 	--functions
 	drawAll = function(self)
+		local w, h = term.getSize()
+		DrawUtils:drawRect(1, 1, w, h, self.spaceColor)
 		for key, val in pairs(self.windows) do
 			if (val.visible) then
 				val:draw()
@@ -234,16 +237,24 @@ Window.prototype = {
 	y = 1;
 	h = 1;
 	w = 1;
+	draggable = false;
+	lastClick = {};
+	hasShadow = false;
+	shadowColor = colors.black;
 	visible = false;
 	closed = false;
 	--functions
 	draw = function(self)
+		--draw shadow
+		if (self.hasShadow) then
+			DrawUtils:drawRect(self.x + 1, self.y + 1, self.w, self.h, self.shadowColor)
+		end
 		--drawPane
 		DrawUtils:drawRect(self.x, self.y, self.w, self.h, self.bgColor)
 		--drawTitle
 		term.setBackgroundColor(self.tlColor)
 		term.setCursorPos(self.x, self.y)
-		for pX = self.x, self.w + self.x, 1 do
+		for pX = self.x, self.w + self.x - 1, 1 do
 			term.write(" ")
 		end
 		if (self.titleLabel ~= nil) then
@@ -277,6 +288,13 @@ Window.prototype = {
 		UIManager:closeWindow(self)
 	end;
 	click = function(self, x, y)
+		if (self.draggable and ((x >= self.x) and (x <= (self.x + self.w - 1)) and (y >= self.y) and (y <= self.y))) then
+			self.lastClick.x = x
+			self.lastClick.y = y
+		else
+			self.lastClick.x = nil;
+			self.lastClick.y = nil;
+		end
 		for key, val in pairs(self.components) do
 			val:click(x, y)
 		end
@@ -297,6 +315,12 @@ Window.prototype = {
 		end
 	end;
 	drag = function(self, x, y)
+		if (self.draggable and self.lastClick.x ~= nil) then
+			self.x = self.x + x - self.lastClick.x
+			self.y = self.y + y - self.lastClick.y
+			self.lastClick.x = x
+			self.lastClick.y = y
+		end
 		for key, val in pairs(self.components) do
 			val:drag(x, y)
 		end
