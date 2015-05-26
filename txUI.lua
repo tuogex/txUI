@@ -165,6 +165,9 @@ Controller.prototype = {
 	addWindow = function(self, windowTbl)
 		windowTbl.closed = false
 		table.insert(self.windows, windowTbl)
+		if (#self.windows == 1) then
+			self:setVisibleWindow(windowTbl)
+		end
 	end;
 	closeWindow = function(self, windowTbl)
 		for key, val in pairs(self.windows) do
