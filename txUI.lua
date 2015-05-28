@@ -16,6 +16,7 @@ Controller.prototype = {
 	termSize = {};
 	spaceColor = colors.white;
 	style = {};
+	useNative = true;
 	oldTerm = {};
 	--functions
 	drawAll = function(self)
@@ -35,8 +36,10 @@ Controller.prototype = {
 	appUpdate = function(self, eventTbl) end;
 	startUpdateCycle = function(self)
 		Controller.termSize = term.getSize()
-		Controller.oldTerm = term.current()
-		term.redirect(term.native())
+		if (self.useNative) then
+			Controller.oldTerm = term.current()
+			term.redirect(term.native())
+		end
 		local handleEvent = function()
 			local event
 			repeat
@@ -200,7 +203,9 @@ Controller.prototype = {
 		self:exit()
 	end;
 	exit = function(self)
-		term.redirect(self.oldTerm)
+		if (self.useNative) then
+			term.redirect(self.oldTerm)
+		end
 		term.setBackgroundColor(colors.black)
 		term.clear()
 		term.setCursorPos(1, 1)
