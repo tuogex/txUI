@@ -17,6 +17,7 @@ Controller.prototype = {
 	spaceColor = colors.white;
 	style = {};
 	useNative = true;
+	multiWindow = false;
 	oldTerm = {};
 	--functions
 	drawAll = function(self)
@@ -27,10 +28,14 @@ Controller.prototype = {
 				val:draw()
 			end
 		end
+		local drawQueue = {}
 		for key, val in pairs(self.windows) do
 			if (val.visible) then
-				val:draw()
+				table.insert(drawQueue, 1, val)
 			end
+		end
+		for key, val in pairs(drawQueue) do
+			val:draw()
 		end
 	end;
 	appUpdate = function(self, eventTbl) end;
@@ -54,7 +59,11 @@ Controller.prototype = {
 					end
 				end
 				for key, val in pairs(self.windows) do
-					if (val.visible and val:click(event[3], event[4], event[2])) then
+					if (val.visible and Utils:inBounds(val.x, val.y, val.w, val.h, event[3], event[4]) and self.windows[1] ~= val) then
+						table.remove(self.windows, key)
+						table.insert(self.windows, 1, val)
+					end
+					if (val.visible and Utils:inBounds(val.x, val.y, val.w, val.h, event[3], event[4]) and val:click(event[3], event[4], event[2])) then
 						break
 					end
 				end
@@ -160,7 +169,7 @@ Controller.prototype = {
 	setVisibleWindow = function(self, windowTbl)
 		for key, val in pairs(self.windows) do
 			local wasVisible = val.visible
-			val.visible = (val == windowTbl)
+			val.visible = (val == windowTbl and not self.multiWindow)
 			if (not wasVisible) then
 				val:onView()
 			end
@@ -172,7 +181,7 @@ Controller.prototype = {
 	addWindow = function(self, windowTbl)
 		windowTbl.closed = false
 		table.insert(self.windows, windowTbl)
-		if (#self.windows == 1) then
+		if (#self.windows == 0) then
 			self:setVisibleWindow(windowTbl)
 		end
 	end;
@@ -276,11 +285,11 @@ Utils.prototype = {
 		end
 	end;
 	wrapText = function(self, text, limit)
-    		local index = 0
-    		return text:gsub("(%C?)", function (w)
-        		index = index + 1
-        		return w .. (index % limit == 0 and "\n" or "")
-    		end)
+		local index = 0
+		return text:gsub("(%C?)", function (w)
+			index = index + 1
+			return w .. (index % limit == 0 and "\n" or "")
+		end)
 	end;
 	splitText = function(self, str, pat)
 		local t = {}
@@ -299,6 +308,11 @@ Utils.prototype = {
 			table.insert(t, cap)
 		end
 		return t
+	end;
+	inBounds = function(self, boundX, boundY, boundW, boundH, checkX, checkY)
+		local xInBound = (checkX >= boundX) and (checkX <= boundX + boundW - 1)
+		local yInBound = (checkY >= boundY) and (checkY <= boundY + boundH - 1)
+		return xInBound and yInBound
 	end;
 }
 Utils.mt = {
@@ -407,13 +421,15 @@ Window.prototype = {
 		if (self.draggable and ((x >= self.x) and (x <= (self.x + self.w - 1)) and (y >= self.y) and (y <= self.y))) then
 			self.lastClick.x = x
 			self.lastClick.y = y
+			self.tlColor = colors.lime
 		else
-			self.lastClick.x = nil;
-			self.lastClick.y = nil;
+			self.lastClick.x = nil
+			self.lastClick.y = nil
 		end
 		for key, val in pairs(self.components) do
 			val:click(x, y)
 		end
+		return (self.draggable and ((x >= self.x) and (x <= (self.x + self.w - 1)) and (y >= self.y) and (y <= self.y)))
 	end;
 	key = function(self, keyCode)
 		for key, val in pairs(self.components) do
