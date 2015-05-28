@@ -370,7 +370,7 @@ Window.prototype = {
 		for pX = self.x, self.w + self.x - 1, 1 do
 			term.write(" ")
 		end
-		if (self.titleLabel ~= nil) then
+		if (#self.titleLabel ~= 0) then
 			self.titleLabel:draw()
 		end
 		--draw components
