@@ -15,6 +15,8 @@ Controller.prototype = {
 	windows = {};
 	termSize = {};
 	spaceColor = colors.white;
+	style = {};
+	oldTerm = {};
 	--functions
 	drawAll = function(self)
 		local w, h = term.getSize()
@@ -32,7 +34,9 @@ Controller.prototype = {
 	end;
 	appUpdate = function(self, eventTbl) end;
 	startUpdateCycle = function(self)
-		self.termSize = term.getSize()
+		Controller.termSize = term.getSize()
+		Controller.oldTerm = term.current()
+		term.redirect(term.native())
 		local handleEvent = function()
 			local event
 			repeat
@@ -110,7 +114,7 @@ Controller.prototype = {
 			return event
 		end
 		while (true) do
-			if (#self.windows == 0) then
+			if (#self.windows == 0 and #self.components == 0) then
 				self:exit()
 			end
 			self:drawAll()
@@ -196,6 +200,7 @@ Controller.prototype = {
 		self:exit()
 	end;
 	exit = function(self)
+		term.redirect(self.oldTerm)
 		term.setBackgroundColor(colors.black)
 		term.clear()
 		term.setCursorPos(1, 1)
@@ -219,9 +224,12 @@ Controller.prototype = {
 	inheritComponent = function(self, obj, newTbl)
 		local oldComponent = self:cloneComponent(obj)
 		for k, v in pairs(newTbl) do
-			oldComponent[k] = v;
+			oldComponent[k] = v
 		end 
-		return oldComponent;
+		return oldComponent
+	end;
+	setDefaultStyle = function(self, styleTbl)
+		self.style = styleTbl
 	end;
 }
 Controller.mt = {
@@ -296,6 +304,32 @@ Utils.mt = {
 setmetatable(Utils, Utils.mt)
 
 -- --
+-- Style
+-- Contains default styles for components and windows
+-- --
+Style = {}
+Style.prototype = {
+	Window = {};
+	Component = {};
+	Panel = {};
+	Button = {};
+	Label = {};
+	TextField = {};
+	List = {};
+	CheckBox = {};
+	ProgressBar = {};
+}
+Style.mt = {
+	__index = function (table, key)
+		return Style.prototype[key]
+	end;
+}
+function Style:new(styleTbl)
+	setmetatable(styleTbl, Style.mt)
+	return styleTbl
+end
+
+-- --
 -- Window
 -- Pretty self explainatory
 -- --
@@ -346,6 +380,7 @@ Window.prototype = {
 	end;
 	setTitleLabel = function(self, newLabel)
 		newLabel.parent = self
+		setmetatable(newLabel, Label.tlmt)
 		self.titleLabel = newLabel
 	end;
 	addComponent = function(self, componentTbl)
@@ -426,7 +461,11 @@ Window.prototype = {
 }
 Window.mt = {
 	__index = function (table, key)
-		return Window.prototype[key]
+		if (Controller.style.Window[key] ~= nil) then
+			return Controller.style.Window[key]
+		else
+			return Window.prototype[key]
+		end
 	end;
 }
 function Window:new(windowTbl)
@@ -558,7 +597,9 @@ Panel.prototype = {
 }
 Panel.mt = {
 	__index = function (table, key)
-		if (Panel.prototype[key] ~= nil) then
+		if (Controller.style.Panel[key] ~= nil) then
+			return Controller.style.Panel[key]
+		elseif (Panel.prototype[key] ~= nil) then
 			return Panel.prototype[key]
 		else
 			return Component.prototype[key]
@@ -611,7 +652,9 @@ Button.prototype = {
 }
 Button.mt = {
 	__index = function (table, key)
-		if (Button.prototype[key] ~= nil) then
+		if (Controller.style.Button[key] ~= nil) then
+			return Controller.style.Button[key]
+		elseif (Button.prototype[key] ~= nil) then
 			return Button.prototype[key]
 		else
 			return Component.prototype[key]
@@ -656,6 +699,19 @@ Label.prototype = {
 Label.mt = {
 	__index = function (table, key)
 		if (Label.prototype[key] ~= nil) then
+			return Label.prototype[key]
+		else
+			return Component.prototype[key]
+		end
+	end;
+}
+Label.tlmt = {
+	__index = function (table, key)
+		if (key == "w") then
+			return table.parent.w
+		elseif (key == "bgColor") then
+			return table.parent.tlColor
+		elseif (Label.prototype[key] ~= nil) then
 			return Label.prototype[key]
 		else
 			return Component.prototype[key]
@@ -1045,3 +1101,5 @@ function ProgressBar:new(progressBarTbl)
 	setmetatable(progressBarTbl, ProgressBar.mt)
 	return progressBarTbl
 end
+
+Controller:setDefaultStyle(Style:new({}))
