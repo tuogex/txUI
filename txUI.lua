@@ -385,12 +385,12 @@ Window.prototype = {
 		--drawPane
 		Utils:drawRect(self.x, self.y, self.w, self.h, self.bgColor)
 		--drawTitle
-		term.setBackgroundColor(self:isActive() and self.activeTlColor or self.tlColor)
+		term.setBackgroundColor((self:isActive() and Controller.multiWindow) and self.activeTlColor or self.tlColor)
 		term.setCursorPos(self.x, self.y)
 		for pX = self.x, self.w + self.x - 1, 1 do
 			term.write(" ")
 		end
-		if (#self.titleLabel ~= 0) then
+		if (self.titleLabel.draw ~= nil) then
 			self.titleLabel:draw()
 		end
 		--draw components
