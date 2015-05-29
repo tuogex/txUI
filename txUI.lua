@@ -62,7 +62,11 @@ Controller.prototype = {
 					if (val.visible and Utils:inBounds(val.x, val.y, val.w, val.h, event[3], event[4]) and self.windows[1] ~= val) then
 						table.remove(self.windows, key)
 						table.insert(self.windows, 1, val)
+					elseif (val.visible and Utils:inBounds(val.x, val.y, val.w, val.h, event[3], event[4]) and self.windows[1] == val) then
+						break
 					end
+				end
+				for key, val in pairs(self.windows) do
 					if (val.visible and Utils:inBounds(val.x, val.y, val.w, val.h, event[3], event[4]) and val:click(event[3], event[4], event[2])) then
 						break
 					end
@@ -169,8 +173,8 @@ Controller.prototype = {
 	setVisibleWindow = function(self, windowTbl)
 		for key, val in pairs(self.windows) do
 			local wasVisible = val.visible
-			val.visible = (val == windowTbl and not self.multiWindow)
-			if (not wasVisible) then
+			val.visible = (tostring(val) == tostring(windowTbl) or self.multiWindow)
+			if (not wasVisible and val.visible) then
 				val:onView()
 			end
 			if (wasVisible and not val.visible) then
@@ -180,8 +184,9 @@ Controller.prototype = {
 	end;
 	addWindow = function(self, windowTbl)
 		windowTbl.closed = false
+		windowTbl.visible = self.multiWindow
 		table.insert(self.windows, windowTbl)
-		if (#self.windows == 0) then
+		if (#self.windows == 1) then
 			self:setVisibleWindow(windowTbl)
 		end
 	end;
@@ -357,6 +362,7 @@ Window.prototype = {
 	-- vars
 	bgColor = colors.lightGray;
 	tlColor = colors.gray;
+	activeTlColor = colors.blue;
 	components = {};
 	titleLabel = {};
 	z = 0;
@@ -379,7 +385,7 @@ Window.prototype = {
 		--drawPane
 		Utils:drawRect(self.x, self.y, self.w, self.h, self.bgColor)
 		--drawTitle
-		term.setBackgroundColor(self.tlColor)
+		term.setBackgroundColor(self:isActive() and self.activeTlColor or self.tlColor)
 		term.setCursorPos(self.x, self.y)
 		for pX = self.x, self.w + self.x - 1, 1 do
 			term.write(" ")
@@ -421,7 +427,6 @@ Window.prototype = {
 		if (self.draggable and ((x >= self.x) and (x <= (self.x + self.w - 1)) and (y >= self.y) and (y <= self.y))) then
 			self.lastClick.x = x
 			self.lastClick.y = y
-			self.tlColor = colors.lime
 		else
 			self.lastClick.x = nil
 			self.lastClick.y = nil
@@ -478,6 +483,9 @@ Window.prototype = {
 		for key, val in pairs(removed) do
 			self.components[val] = nil
 		end
+	end;
+	isActive = function(self)
+		return Controller.windows[1] == self
 	end;
 }
 Window.mt = {
