@@ -15,6 +15,10 @@ Controller.prototype = {
 	windows = {};
 	termSize = {};
 	spaceColor = colors.white;
+	style = {};
+	useNative = true;
+	multiWindow = false;
+	oldTerm = {};
 	--functions
 	drawAll = function(self)
 		local w, h = term.getSize()
@@ -24,15 +28,23 @@ Controller.prototype = {
 				val:draw()
 			end
 		end
+		local drawQueue = {}
 		for key, val in pairs(self.windows) do
 			if (val.visible) then
-				val:draw()
+				table.insert(drawQueue, 1, val)
 			end
+		end
+		for key, val in pairs(drawQueue) do
+			val:draw()
 		end
 	end;
 	appUpdate = function(self, eventTbl) end;
 	startUpdateCycle = function(self)
-		self.termSize = term.getSize()
+		Controller.termSize = term.getSize()
+		if (self.useNative) then
+			Controller.oldTerm = term.current()
+			term.redirect(term.native())
+		end
 		local handleEvent = function()
 			local event
 			repeat
@@ -47,7 +59,15 @@ Controller.prototype = {
 					end
 				end
 				for key, val in pairs(self.windows) do
-					if (val.visible and val:click(event[3], event[4], event[2])) then
+					if (val.visible and Utils:inBounds(val.x, val.y, val.w, val.h, event[3], event[4]) and self.windows[1] ~= val) then
+						table.remove(self.windows, key)
+						table.insert(self.windows, 1, val)
+					elseif (val.visible and Utils:inBounds(val.x, val.y, val.w, val.h, event[3], event[4]) and self.windows[1] == val) then
+						break
+					end
+				end
+				for key, val in pairs(self.windows) do
+					if (val.visible and Utils:inBounds(val.x, val.y, val.w, val.h, event[3], event[4]) and val:click(event[3], event[4], event[2])) then
 						break
 					end
 				end
@@ -110,7 +130,7 @@ Controller.prototype = {
 			return event
 		end
 		while (true) do
-			if (#self.windows == 0) then
+			if (#self.windows == 0 and #self.components == 0) then
 				self:exit()
 			end
 			self:drawAll()
@@ -153,8 +173,8 @@ Controller.prototype = {
 	setVisibleWindow = function(self, windowTbl)
 		for key, val in pairs(self.windows) do
 			local wasVisible = val.visible
-			val.visible = (val == windowTbl)
-			if (not wasVisible) then
+			val.visible = (tostring(val) == tostring(windowTbl) or self.multiWindow)
+			if (not wasVisible and val.visible) then
 				val:onView()
 			end
 			if (wasVisible and not val.visible) then
@@ -164,6 +184,7 @@ Controller.prototype = {
 	end;
 	addWindow = function(self, windowTbl)
 		windowTbl.closed = false
+		windowTbl.visible = self.multiWindow
 		table.insert(self.windows, windowTbl)
 		if (#self.windows == 1) then
 			self:setVisibleWindow(windowTbl)
@@ -196,6 +217,9 @@ Controller.prototype = {
 		self:exit()
 	end;
 	exit = function(self)
+		if (self.useNative) then
+			term.redirect(self.oldTerm)
+		end
 		term.setBackgroundColor(colors.black)
 		term.clear()
 		term.setCursorPos(1, 1)
@@ -219,9 +243,12 @@ Controller.prototype = {
 	inheritComponent = function(self, obj, newTbl)
 		local oldComponent = self:cloneComponent(obj)
 		for k, v in pairs(newTbl) do
-			oldComponent[k] = v;
+			oldComponent[k] = v
 		end 
-		return oldComponent;
+		return oldComponent
+	end;
+	setDefaultStyle = function(self, styleTbl)
+		self.style = styleTbl
 	end;
 }
 Controller.mt = {
@@ -263,11 +290,11 @@ Utils.prototype = {
 		end
 	end;
 	wrapText = function(self, text, limit)
-    		local index = 0
-    		return text:gsub("(%C?)", function (w)
-        		index = index + 1
-        		return w .. (index % limit == 0 and "\n" or "")
-    		end)
+		local index = 0
+		return text:gsub("(%C?)", function (w)
+			index = index + 1
+			return w .. (index % limit == 0 and "\n" or "")
+		end)
 	end;
 	splitText = function(self, str, pat)
 		local t = {}
@@ -287,6 +314,11 @@ Utils.prototype = {
 		end
 		return t
 	end;
+	inBounds = function(self, boundX, boundY, boundW, boundH, checkX, checkY)
+		local xInBound = (checkX >= boundX) and (checkX <= boundX + boundW - 1)
+		local yInBound = (checkY >= boundY) and (checkY <= boundY + boundH - 1)
+		return xInBound and yInBound
+	end;
 }
 Utils.mt = {
 	__index = function(table, key)
@@ -294,6 +326,32 @@ Utils.mt = {
 	end;
 }
 setmetatable(Utils, Utils.mt)
+
+-- --
+-- Style
+-- Contains default styles for components and windows
+-- --
+Style = {}
+Style.prototype = {
+	Window = {};
+	Component = {};
+	Panel = {};
+	Button = {};
+	Label = {};
+	TextField = {};
+	List = {};
+	CheckBox = {};
+	ProgressBar = {};
+}
+Style.mt = {
+	__index = function (table, key)
+		return Style.prototype[key]
+	end;
+}
+function Style:new(styleTbl)
+	setmetatable(styleTbl, Style.mt)
+	return styleTbl
+end
 
 -- --
 -- Window
@@ -304,6 +362,7 @@ Window.prototype = {
 	-- vars
 	bgColor = colors.lightGray;
 	tlColor = colors.gray;
+	activeTlColor = colors.blue;
 	components = {};
 	titleLabel = {};
 	z = 0;
@@ -326,12 +385,12 @@ Window.prototype = {
 		--drawPane
 		Utils:drawRect(self.x, self.y, self.w, self.h, self.bgColor)
 		--drawTitle
-		term.setBackgroundColor(self.tlColor)
+		term.setBackgroundColor((self:isActive() and Controller.multiWindow) and self.activeTlColor or self.tlColor)
 		term.setCursorPos(self.x, self.y)
 		for pX = self.x, self.w + self.x - 1, 1 do
 			term.write(" ")
 		end
-		if (self.titleLabel ~= nil) then
+		if (self.titleLabel.draw ~= nil) then
 			self.titleLabel:draw()
 		end
 		--draw components
@@ -346,6 +405,7 @@ Window.prototype = {
 	end;
 	setTitleLabel = function(self, newLabel)
 		newLabel.parent = self
+		setmetatable(newLabel, Label.tlmt)
 		self.titleLabel = newLabel
 	end;
 	addComponent = function(self, componentTbl)
@@ -368,12 +428,13 @@ Window.prototype = {
 			self.lastClick.x = x
 			self.lastClick.y = y
 		else
-			self.lastClick.x = nil;
-			self.lastClick.y = nil;
+			self.lastClick.x = nil
+			self.lastClick.y = nil
 		end
 		for key, val in pairs(self.components) do
 			val:click(x, y)
 		end
+		return (self.draggable and ((x >= self.x) and (x <= (self.x + self.w - 1)) and (y >= self.y) and (y <= self.y)))
 	end;
 	key = function(self, keyCode)
 		for key, val in pairs(self.components) do
@@ -423,10 +484,17 @@ Window.prototype = {
 			self.components[val] = nil
 		end
 	end;
+	isActive = function(self)
+		return Controller.windows[1] == self
+	end;
 }
 Window.mt = {
 	__index = function (table, key)
-		return Window.prototype[key]
+		if (Controller.style.Window[key] ~= nil) then
+			return Controller.style.Window[key]
+		else
+			return Window.prototype[key]
+		end
 	end;
 }
 function Window:new(windowTbl)
@@ -558,7 +626,9 @@ Panel.prototype = {
 }
 Panel.mt = {
 	__index = function (table, key)
-		if (Panel.prototype[key] ~= nil) then
+		if (Controller.style.Panel[key] ~= nil) then
+			return Controller.style.Panel[key]
+		elseif (Panel.prototype[key] ~= nil) then
 			return Panel.prototype[key]
 		else
 			return Component.prototype[key]
@@ -611,7 +681,9 @@ Button.prototype = {
 }
 Button.mt = {
 	__index = function (table, key)
-		if (Button.prototype[key] ~= nil) then
+		if (Controller.style.Button[key] ~= nil) then
+			return Controller.style.Button[key]
+		elseif (Button.prototype[key] ~= nil) then
 			return Button.prototype[key]
 		else
 			return Component.prototype[key]
@@ -656,6 +728,19 @@ Label.prototype = {
 Label.mt = {
 	__index = function (table, key)
 		if (Label.prototype[key] ~= nil) then
+			return Label.prototype[key]
+		else
+			return Component.prototype[key]
+		end
+	end;
+}
+Label.tlmt = {
+	__index = function (table, key)
+		if (key == "w") then
+			return table.parent.w
+		elseif (key == "bgColor") then
+			return table.parent.tlColor
+		elseif (Label.prototype[key] ~= nil) then
 			return Label.prototype[key]
 		else
 			return Component.prototype[key]
@@ -1045,3 +1130,5 @@ function ProgressBar:new(progressBarTbl)
 	setmetatable(progressBarTbl, ProgressBar.mt)
 	return progressBarTbl
 end
+
+Controller:setDefaultStyle(Style:new({}))
