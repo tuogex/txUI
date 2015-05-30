@@ -59,15 +59,16 @@ Controller.prototype = {
 					end
 				end
 				for key, val in pairs(self.windows) do
-					if (val.visible and Utils:inBounds(val.x, val.y, val.w, val.h, event[3], event[4]) and self.windows[1] ~= val) then
+					if (val.visible and Utils:inBounds(val.x, val.y, val.w, val.h, event[3], event[4]) and tostring(self.windows[1]) ~= tostring(val)) then
 						table.remove(self.windows, key)
 						table.insert(self.windows, 1, val)
-					elseif (val.visible and Utils:inBounds(val.x, val.y, val.w, val.h, event[3], event[4]) and self.windows[1] == val) then
+						break
+					elseif (val.visible and Utils:inBounds(val.x, val.y, val.w, val.h, event[3], event[4]) and tostring(self.windows[1]) == tostring(val)) then
 						break
 					end
 				end
 				for key, val in pairs(self.windows) do
-					if (val.visible and Utils:inBounds(val.x, val.y, val.w, val.h, event[3], event[4]) and val:click(event[3], event[4], event[2])) then
+					if (val.visible and Utils:inBounds(val.x, val.y, val.w, val.h, event[3], event[4]) and tostring(self.windows[1]) == tostring(val) and val:click(event[3], event[4], event[2])) then
 						break
 					end
 				end
