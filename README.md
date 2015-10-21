@@ -14,4 +14,5 @@ Preview
 
 Documentation
 ----
-Read the [wiki](../../wiki)!
+For guides and tutorials [read me](https://txui.readme.io/docs/getting-started)!
+For component documentation read the [wiki](../../wiki)!
